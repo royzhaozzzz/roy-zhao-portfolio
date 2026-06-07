@@ -165,7 +165,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs uppercase tracking-widest text-[#5c554a] mb-2" data-i18n="guestbook.theme">选择暗房相纸</label>
+                            <label class="block text-xs uppercase tracking-widest text-[#5c554a] mb-2" data-i18n="guestbook.theme">选择相纸颜色</label>
                             <div class="grid grid-cols-3 gap-2 text-[#2c2a27]">
                                 <label class="cursor-pointer border border-[#8c8e91]/30 bg-white rounded p-2 text-center text-xs flex flex-col items-center gap-1 hover:bg-[#faf8f5] transition-all">
                                     <input type="radio" name="noteTheme" value="classic" checked class="accent-[#2c2a27]">
@@ -346,6 +346,9 @@
                 <span id="loginSwitchText">没有账号？</span>
                 <button id="loginSwitchBtn" onclick="toggleLoginMode()" class="text-white/60 hover:text-white underline underline-offset-2 transition-colors">注册</button>
             </p>
+            <p class="text-white/20 text-[10px]">
+                <button onclick="resetPassword()" class="text-white/30 hover:text-white/60 underline underline-offset-2 transition-colors">忘记密码？</button>
+            </p>
         </div>
     </div>
 
@@ -491,7 +494,7 @@
             'guestbook.title':   { zh: '留下墨迹',       en: 'Add Message' },
             'guestbook.name':    { zh: '称呼',           en: 'Name' },
             'guestbook.name_ph': { zh: 'e.g. 拾光者',    en: 'e.g. Light Chaser' },
-            'guestbook.theme':   { zh: '选择暗房相纸',   en: 'Choose Paper Tone' },
+            'guestbook.theme':   { zh: '选择相纸颜色',   en: 'Choose Paper Tone' },
             'guestbook.warm':    { zh: '暖白',           en: 'Warm' },
             'guestbook.sepia':   { zh: '焦糖',           en: 'Sepia' },
             'guestbook.blue':    { zh: '蓝晒',           en: 'Cyan' },
@@ -1094,13 +1097,13 @@
                     if (!doc.exists) { alert('账号不存在，请先注册'); return; }
                     const data = doc.data();
                     if (data.password !== password) { alert('密码错误'); return; }
-                    loginSuccess(nickname);
                     userRef.update({ lastLogin: Date.now() }).catch(() => {});
+                    loginSuccess(nickname);
                 }).catch(err => { alert('登录失败，请重试'); });
             } else {
                 // Register: check if exists, then create
                 userRef.get().then(doc => {
-                    if (doc.exists) { alert('该昵称已被注册，换一个吧'); return; }
+                    if (doc.exists) { alert('该昵称已被注册，换一个吧'); return Promise.reject('EXISTS'); }
                     return userRef.set({
                         nickname: nickname,
                         password: password,
@@ -1109,8 +1112,27 @@
                     });
                 }).then(() => {
                     loginSuccess(nickname);
-                }).catch(err => { alert('注册失败，请重试'); });
+                }).catch(err => {
+                    if (err !== 'EXISTS') alert('注册失败，请重试');
+                });
             }
+        }
+
+        function resetPassword() {
+            const nickname = prompt('请输入需要重置密码的昵称：');
+            if (!nickname || !nickname.trim()) return;
+            const newPw = prompt('请输入新的六位数字密码：');
+            if (!newPw || newPw.length !== 6 || !/^\d{6}$/.test(newPw)) { alert('密码必须是六位数字'); return; }
+
+            const userRef = db.collection('users').doc(nickname.trim());
+            userRef.get().then(doc => {
+                if (!doc.exists) { alert('该账号不存在'); return; }
+                return userRef.update({ password: newPw.trim() });
+            }).then(() => {
+                alert('密码重置成功！请重新登录');
+            }).catch(err => {
+                alert('重置失败，请重试');
+            });
         }
 
         function loginSuccess(nickname) {
@@ -1400,7 +1422,9 @@
             const parentMsg = messages.find(m => m.id === currentModalMsgId);
             const replyToName = parentMsg ? parentMsg.name : '';
 
-            db.collection('guestbook').doc(currentModalMsgId).collection('replies').add({
+            // Add reply to subcollection
+            const msgRef = db.collection('guestbook').doc(currentModalMsgId);
+            msgRef.collection('replies').add({
                 name: nameVal,
                 message: msgVal,
                 date: dateStr,
