@@ -1,0 +1,952 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roy Zhao / 赵润涵 - Film Photography Portfolio</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for standard photography icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts for exquisite Chinese Serif -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Times New Roman', Times, 'Noto Serif SC', 'SimSun', 'Songti SC', serif;
+            background-color: #ffffff; /* Pure white background */
+            color: #2c2a27; /* Dark text for readability */
+            overflow-x: hidden;
+            transition: background-color 0.5s ease;
+        }
+
+        /* Custom transitions for elegant darkroom feel */
+        .vintage-transition {
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Vignette overlay for a pinhole lens / classic camera vibe */
+        .vignette {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, transparent 55%, rgba(0,0,0,0.05) 150%);
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        /* Polaroid 'Developing' Effect Animation for Guestbook */
+        @keyframes polaroidDevelop {
+            0% {
+                filter: blur(12px) contrast(0.1) brightness(2.0) grayscale(100%);
+                opacity: 0.3;
+            }
+            30% {
+                filter: blur(6px) contrast(0.4) brightness(1.5) sepia(40%);
+                opacity: 0.7;
+            }
+            100% {
+                filter: blur(0px) contrast(1) brightness(1) sepia(0%);
+                opacity: 1;
+            }
+        }
+        
+        .developing-card {
+            animation: polaroidDevelop 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+
+        /* Custom scrollbar matching the light theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f5f4f0;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c5beb4;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a39b90;
+        }
+    </style>
+</head>
+<body class="relative min-h-screen selection:bg-[#2c2a27] selection:text-[#f7f4eb]">
+
+    <div class="vignette"></div>
+
+    <header class="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-white/10 px-6 py-4 md:px-12 md:py-6 vintage-transition">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <!-- Brand Logo -->
+            <a href="#" class="flex items-center group">
+                <span class="text-3xl md:text-4xl font-light tracking-[0.05em] text-white group-hover:text-gray-300 transition-colors">zᶻ</span>
+            </a>
+
+            <!-- Menu Navigation -->
+            <nav class="flex items-center space-x-7 text-base tracking-[0.05em]">
+                <button onclick="scrollToSection('gallery-section')" class="hover:text-gray-300 text-white transition-colors border-b border-transparent hover:border-white pb-1" data-i18n="nav.gallery">底片册</button>
+                <button onclick="scrollToSection('guestbook-section')" class="hover:text-gray-300 text-white transition-colors border-b border-transparent hover:border-white pb-1" data-i18n="nav.guestbook">留影</button>
+                <button onclick="scrollToSection('about-section')" class="hover:text-gray-300 text-white transition-colors border-b border-transparent hover:border-white pb-1" data-i18n="nav.about">关于</button>
+                <button onclick="toggleLang()" class="text-sm tracking-[0.05em] text-white/70 hover:text-white transition-colors border border-white/30 rounded px-2 py-1" data-i18n="nav.lang">中</button>
+            </nav>
+        </div>
+    </header>
+
+    <section class="max-w-7xl mx-auto px-6 pt-12 pb-20 md:px-12 md:py-24 grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
+        <div class="md:col-span-5 flex flex-col justify-center space-y-6 md:pr-8">
+            <span class="text-xs uppercase tracking-[0.4em] text-[#5c554a]/80" data-i18n="hero.tag">禾木 · 阿勒泰</span>
+            <h2 class="text-3xl md:text-4xl font-light leading-snug tracking-wide text-[#2c2a27]" data-i18n="hero.heading">
+                零下二十度<br>等一场日出
+            </h2>
+            <div class="w-12 h-[1px] bg-[#2c2a27]/50"></div>
+            <p class="text-[#3d3326] text-sm md:text-base leading-relaxed tracking-wider font-light" data-i18n="hero.quote">
+                二月的禾木村，凌晨六点，气温零下二十度。我架好三脚架，在及膝的雪地里等了一个多小时。鼻涕冻成了冰，手指在快门键上几乎没有知觉。然后天边开始泛光——先是深蓝，再是粉紫，最后整片天空被金色的晨光点燃。那一刻所有的冷都值得了。
+            </p>
+        </div>
+        <div class="md:col-span-7 relative group">
+            <!-- Polaroid-styled Hero Cover (Contrasts sharply with 18% gray background) -->
+            <div class="bg-white p-4 pb-16 shadow-2xl rounded-sm transform rotate-1 hover:rotate-0 transition-transform duration-500 border border-[#e2dcd0]">
+                <div class="aspect-w-16 aspect-h-10 overflow-hidden bg-zinc-200">
+                    <img src="images/URC_2374.jpg"
+                         alt="禾木村 / 阿勒泰地区"
+                         class="object-cover w-full h-[350px] md:h-[420px]"
+                         onerror="this.src='https://placehold.co/1200x800/d6cfc2/2c2a27?text=Analog+Vibe'">
+                </div>
+                <div class="mt-6 flex justify-between items-center px-2">
+                    <span class="text-xs text-[#5c554a] tracking-[0.1em]">#01 禾木村 / 阿勒泰地区</span>
+                    <span class="text-xs text-[#8c8273] font-mono">Nikon Z7Ⅱ 24-200mm F4-6.3</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="gallery-section" class="bg-[#f5f4f0] py-20 border-y border-[#e2dcd0] vintage-transition">
+        <div class="max-w-7xl mx-auto px-6 md:px-12">
+            
+            <!-- Section Title -->
+            <div class="text-center space-y-3 mb-16">
+                <span class="text-xs uppercase tracking-[0.5em] text-[#8c8273]" data-i18n="gallery.tag">精选作品</span>
+                <h3 class="text-2xl md:text-3xl font-light tracking-[0.15em] text-[#2c2a27]" data-i18n="gallery.heading">底片册</h3>
+                <div class="w-8 h-[1px] bg-[#2c2a27]/50 mx-auto"></div>
+            </div>
+
+
+            <!-- Photo Grid -->
+            <div id="photoGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <!-- Javascript renders custom polaroid assets here -->
+            </div>
+        </div>
+    </section>
+
+    <section id="guestbook-section" class="py-20 bg-[#fafaf9] border-b border-[#e2dcd0]">
+        <div class="max-w-7xl mx-auto px-6 md:px-12">
+            <!-- Section Title -->
+            <div class="text-center space-y-3 mb-16">
+                <span class="text-xs uppercase tracking-[0.5em] text-[#8c8273]" data-i18n="guestbook.tag">有什么想对我说的吗</span>
+                <h3 class="text-2xl md:text-3xl font-light tracking-[0.15em] text-[#2c2a27]" data-i18n="guestbook.heading">留影簿</h3>
+                <div class="w-8 h-[1px] bg-[#2c2a27]/50 mx-auto"></div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+                <!-- Left Column: Input Form -->
+                <div class="lg:col-span-4 bg-white p-6 md:p-8 rounded-sm border border-[#e2dcd0] shadow-xl space-y-6">
+                    <h4 class="text-lg font-light tracking-wider text-[#2c2a27] border-b border-[#e2dcd0] pb-3" data-i18n="guestbook.title">留下墨迹</h4>
+
+                    <form id="guestbookForm" onsubmit="handleGuestbookSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-[#5c554a] mb-2" data-i18n="guestbook.name">称呼</label>
+                            <input type="text" id="visitorName" required data-i18n-placeholder="guestbook.name_ph" placeholder="e.g. 拾光者"
+                                class="w-full px-4 py-2.5 bg-[#fafaf9] border border-[#d6cfc2] rounded-sm focus:outline-none focus:border-[#2c2a27] text-sm tracking-wide text-[#2c2a27] placeholder-[#a39b90] transition-colors">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-[#5c554a] mb-2" data-i18n="guestbook.theme">选择暗房相纸</label>
+                            <div class="grid grid-cols-3 gap-2 text-[#2c2a27]">
+                                <label class="cursor-pointer border border-[#8c8e91]/30 bg-white rounded p-2 text-center text-xs flex flex-col items-center gap-1 hover:bg-[#faf8f5] transition-all">
+                                    <input type="radio" name="noteTheme" value="classic" checked class="accent-[#2c2a27]">
+                                    <span class="text-[10px] tracking-wide font-medium" data-i18n="guestbook.warm">暖白</span>
+                                </label>
+                                <label class="cursor-pointer border border-[#8c8e91]/30 bg-[#faf0dc] rounded p-2 text-center text-xs flex flex-col items-center gap-1 hover:bg-[#fdf7eb] transition-all">
+                                    <input type="radio" name="noteTheme" value="vintage" class="accent-[#2c2a27]">
+                                    <span class="text-[10px] tracking-wide font-medium" data-i18n="guestbook.sepia">焦糖</span>
+                                </label>
+                                <label class="cursor-pointer border border-[#8c8e91]/30 bg-[#e8edf2] rounded p-2 text-center text-xs flex flex-col items-center gap-1 hover:bg-[#f0f4f8] transition-all">
+                                    <input type="radio" name="noteTheme" value="cyanotype" class="accent-[#2c2a27]">
+                                    <span class="text-[10px] tracking-wide font-medium" data-i18n="guestbook.blue">蓝晒</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-[#5c554a] mb-2" data-i18n="guestbook.msg">留言</label>
+                            <textarea id="visitorMessage" required rows="4" data-i18n-placeholder="guestbook.msg_ph" placeholder="光影流转，写下你想说的话..."
+                                class="w-full px-4 py-2.5 bg-[#fafaf9] border border-[#d6cfc2] rounded-sm focus:outline-none focus:border-[#2c2a27] text-sm tracking-wide text-[#2c2a27] placeholder-[#a39b90] transition-colors resize-none"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-[#2c2a27] text-white text-xs uppercase tracking-[0.2em] hover:bg-[#5c554a] transition-colors rounded-sm flex items-center justify-center space-x-2 font-medium shadow-md">
+                            <i class="fa-solid fa-flask"></i>
+                            <span data-i18n="guestbook.submit">放入显影池</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Right Column: Polaroid Message Wall -->
+                <div class="lg:col-span-8 space-y-4">
+                    <div class="flex justify-between items-center border-b border-[#e2dcd0] pb-3">
+                        <span class="text-xs uppercase tracking-[0.2em] text-[#5c554a]" data-i18n="guestbook.wall">银盐留迹</span>
+                        <button onclick="clearMessages()" class="text-[10px] uppercase tracking-wider text-[#a39b90] hover:text-[#2c2a27] transition-colors">
+                            <i class="fa-regular fa-trash-can mr-1"></i> <span data-i18n="guestbook.clear">清空留言</span>
+                        </button>
+                    </div>
+
+                    <!-- Polaroid Grid -->
+                    <div id="messageBoard" class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                        <!-- Dynamically populated via JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about-section" class="max-w-7xl mx-auto px-6 py-24 md:px-12 grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+        <!-- Profile Portrait Left -->
+        <div class="lg:col-span-5 relative">
+            <div class="relative max-w-sm mx-auto">
+                <div class="absolute inset-0 bg-white p-3 pb-12 shadow-xl rounded-sm transform -rotate-6 border border-[#e2dcd0]">
+                    <div class="w-full h-80 bg-stone-300"></div>
+                </div>
+                <div class="relative bg-white p-3 pb-12 shadow-2xl rounded-sm transform rotate-3 border border-[#e2dcd0] z-10 hover:rotate-0 transition-transform duration-500">
+                    <img src="images/ROY_8128_01.jpg"
+                         alt="Photographer Portrait"
+                         class="object-cover w-full h-80"
+                         onerror="this.src='https://placehold.co/600x800/d6cfc2/2c2a27?text=Roy+Zhao'">
+                    <div class="mt-4 text-center">
+                        <span class="text-xs text-[#5c554a] tracking-[0.2em] font-mono">Self Portrait / Nikon Z5</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editorial Info & Contact Details -->
+        <div class="lg:col-span-7 space-y-8">
+            <div class="space-y-4">
+                <h3 class="text-3xl font-light tracking-wide text-[#2c2a27]" data-i18n="about.heading">关于我</h3>
+                <div class="w-12 h-[1px] bg-[#2c2a27]/50"></div>
+            </div>
+            
+            <div class="space-y-4 text-[#3d3326] text-sm md:text-base leading-relaxed tracking-wider font-light">
+                <p data-i18n="about.intro">
+                    你好，我是<span class="text-[#2c2a27] font-semibold">赵润涵</span>。
+                </p>
+            </div>
+
+            <!-- EXIF and Equipment Profile -->
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 py-4 border-y border-[#d6cfc2]">
+                <div>
+                    <span class="block text-xs uppercase tracking-wider text-[#8c8273] mb-1" data-i18n="about.equip">设备</span>
+                    <span class="text-xs font-light text-[#2c2a27]">Nikon Z7Ⅱ / Nikon FE2</span>
+                </div>
+                <div>
+                    <span class="block text-xs uppercase tracking-wider text-[#8c8273] mb-1" data-i18n="about.film">底片</span>
+                    <span class="text-xs font-light text-[#2c2a27]">Portra 160 / Kodak 5219</span>
+                </div>
+                <div>
+                    <span class="block text-xs uppercase tracking-wider text-[#8c8273] mb-1" data-i18n="about.location">地区</span>
+                    <span class="text-xs font-light text-[#2c2a27]">深圳 Shenzhen</span>
+                </div>
+            </div>
+
+            <!-- Custom Direct Contacts & Socials -->
+            <div class="space-y-6 pt-2">
+                <!-- Direct Communication -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="mailto:roy_zrh@foxmail.com" class="flex items-center justify-center space-x-2 px-5 py-3 border border-[#c5beb4] hover:border-[#2c2a27] hover:bg-[#f5f4f0] text-xs uppercase tracking-widest transition-all rounded-sm w-full sm:w-auto text-[#2c2a27]">
+                        <i class="fa-regular fa-envelope"></i>
+                        <span>roy_zrh@foxmail.com</span>
+                    </a>
+                    <a href="#" class="flex items-center justify-center space-x-2 px-5 py-3 border border-[#c5beb4] hover:border-[#2c2a27] hover:bg-[#f5f4f0] text-xs tracking-widest transition-all rounded-sm w-full sm:w-auto text-[#2c2a27]">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                            <path d="M8.69 3.46C3.9 3.46 0 6.57 0 10.39c0 2.1 1.1 3.99 2.81 5.25l-.7 2.11 2.42-1.21c.84.24 1.75.37 2.69.37.32 0 .63-.02.94-.05-.14-.52-.22-1.06-.22-1.62 0-3.2 3.03-5.8 6.77-5.8.25 0 .5.01.74.03C14.74 6.19 11.93 3.46 8.69 3.46zm-2.9 4.17c.4 0 .73.31.73.69 0 .39-.33.7-.73.7-.41 0-.73-.31-.73-.7 0-.38.32-.69.73-.69zm5.1 0c.4 0 .73.31.73.69 0 .39-.33.7-.73.7-.41 0-.73-.31-.73-.7 0-.38.32-.69.73-.69z"/>
+                            <path d="M16.38 11.5c-3.35 0-6.07 2.23-6.07 4.97 0 2.75 2.72 4.98 6.07 4.98.82 0 1.6-.13 2.33-.37l2.09 1.04-.6-1.81c1.47-1.04 2.32-2.42 2.32-3.84 0-2.74-2.72-4.97-6.07-4.97h-.07zm-1.45 2.82c.35 0 .63.27.63.6 0 .34-.28.6-.63.6-.34 0-.62-.26-.62-.6 0-.33.28-.6.62-.6zm3.56 0c.35 0 .63.27.63.6 0 .34-.28.6-.63.6-.34 0-.62-.26-.62-.6 0-.33.28-.6.62-.6z"/>
+                        </svg>
+                        <span>royzrh</span>
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-6">
+                    <!-- Douyin -->
+                    <a href="https://v.douyin.com/ortI32aj29M/" target="_blank" rel="noopener noreferrer"
+                       class="group flex items-center justify-center w-10 h-10 rounded-full border border-[#d6cfc2] bg-[#f5f4f0] hover:bg-black hover:border-black transition-all shadow-sm"
+                       title="抖音">
+                        <svg class="w-4 h-4 fill-current text-[#5c554a] group-hover:text-white transition-colors" viewBox="0 0 24 24">
+                            <path d="M19.6 5.5c-1.4-.7-2.4-1.8-2.8-3.2-.1-.3-.3-.4-.6-.3h-3.5v14.3c0 1.5-1.2 2.7-2.7 2.7-1.5 0-2.7-1.2-2.7-2.7 0-1.5 1.2-2.7 2.7-2.7.3 0 .6.1.8.2v-3.6c-.3 0-.5-.1-.8-.1-3.6 0-6.5 2.9-6.5 6.5s2.9 6.5 6.5 6.5 6.5-2.9 6.5-6.5V8.1c1.2.9 2.7 1.4 4.2 1.4v-3.5c-.3 0-.6-.2-.8-.5h.7z"/>
+                        </svg>
+                    </a>
+
+                    <!-- Xiaohongshu -->
+                    <a href="https://xhslink.com/m/31Yz5FdEYJM" target="_blank" rel="noopener noreferrer"
+                       class="group flex items-center justify-center w-10 h-10 rounded-full border border-[#d6cfc2] bg-[#f5f4f0] hover:bg-[#ff2442] hover:border-[#ff2442] transition-all shadow-sm"
+                       title="小红书">
+                        <svg class="w-4 h-4 fill-current text-[#5c554a] group-hover:text-white transition-colors" viewBox="0 0 24 24">
+                            <path d="M4 2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm2 4v11h2v-5h1a4 4 0 1 0 0-8H6v2zm4 2h-2V8h2a2 2 0 1 1 0 4v-2h-2v2zm5-2h2v9h-2V6zm2-2h-2v2h2V4z"/>
+                        </svg>
+                    </a>
+
+                    <!-- Weibo -->
+                    <a href="https://m.weibo.cn/u/6174044607?uid=6174044607&t=userinfo" target="_blank" rel="noopener noreferrer"
+                       class="group flex items-center justify-center w-10 h-10 rounded-full border border-[#d6cfc2] bg-[#f5f4f0] hover:bg-[#e6162d] hover:border-[#e6162d] transition-all shadow-sm"
+                       title="微博">
+                        <svg class="w-4 h-4 fill-current text-[#5c554a] group-hover:text-white transition-colors" viewBox="0 0 24 24">
+                            <ellipse cx="12" cy="13" rx="9" ry="8" stroke="currentColor" stroke-width="2" fill="none"/>
+                            <circle cx="12" cy="13" r="3.5" fill="currentColor"/>
+                            <path d="M3 8c2-3 6-5 10-4 3 1 5 2 7 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="toastNotification" class="fixed bottom-6 right-6 bg-white text-[#2c2a27] px-6 py-4 rounded-sm shadow-2xl z-50 text-xs tracking-wider transform translate-y-20 opacity-0 transition-all duration-500 pointer-events-none flex items-center space-x-3 border border-[#8c8e91]/30">
+        <i class="fa-solid fa-flask-bubble text-[#a39b90] text-base animate-bounce"></i>
+        <span id="toastText">底片已入显影池，正在暗房成像...</span>
+    </div>
+
+    <footer class="bg-[#5e6063] text-white/85 py-12 px-6 text-center text-xs tracking-[0.2em] uppercase border-t border-[#8c8e91]/20">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="font-light">
+                <span data-i18n="footer.copy">© 2026 Roy Zhao / 赵润涵. 保留所有权利。</span>
+            </div>
+        </div>
+    </footer>
+
+    <div id="lightbox" class="fixed inset-0 bg-[#737578] z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <!-- Close Button -->
+        <button onclick="closeLightbox()" class="absolute top-6 right-6 text-white/60 hover:text-white text-3xl font-light transition-colors z-50">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <!-- Main Modal Content -->
+        <div class="max-w-6xl w-full mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-10 items-center">
+            <!-- Left: Zoomed Photo Box -->
+            <div class="md:col-span-8 flex justify-center items-center relative group">
+                <button onclick="prevPhoto()" class="absolute left-2 text-white/60 hover:text-white text-2xl bg-black/30 hover:bg-black/50 p-3 rounded-full transition-all">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+
+                <img id="lightboxImg" src="" alt="Zoomed View" class="max-h-[75vh] max-w-full object-contain shadow-2xl transition-transform duration-300">
+
+                <button onclick="nextPhoto()" class="absolute right-2 text-white/60 hover:text-white text-2xl bg-black/30 hover:bg-black/50 p-3 rounded-full transition-all">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Right: EXIF & Narrative Panel -->
+            <div class="md:col-span-4 text-white space-y-6">
+                <div>
+                    <span id="lightboxFilm" class="inline-block px-3 py-1 bg-white/15 text-[10px] tracking-[0.3em] uppercase rounded-sm text-white/80 mb-3">
+                        KODAK PORTRA 400
+                    </span>
+                    <h4 id="lightboxTitle" class="text-2xl font-light tracking-[0.1em] text-white">照片标题 Title</h4>
+                    <p id="lightboxLocation" class="text-xs text-white/60 mt-1 tracking-wider">
+                        <i class="fa-solid fa-location-dot mr-1 text-white/40"></i> Tokyo, Japan
+                    </p>
+                </div>
+
+                <div class="h-[1px] bg-white/15"></div>
+
+                <!-- EXIF Details -->
+                <div class="grid grid-cols-2 gap-y-4 gap-x-6 text-xs font-light">
+                    <div>
+                        <span class="block text-white/40 uppercase tracking-wider text-[10px] mb-1">Camera Body</span>
+                        <span id="exifCamera" class="font-mono text-white">Leica M6</span>
+                    </div>
+                    <div>
+                        <span class="block text-white/40 uppercase tracking-wider text-[10px] mb-1">Aperture</span>
+                        <span id="exifAperture" class="font-mono text-white">f/2.8</span>
+                    </div>
+                    <div>
+                        <span class="block text-white/40 uppercase tracking-wider text-[10px] mb-1">Shutter Speed</span>
+                        <span id="exifShutter" class="font-mono text-white">1/125s</span>
+                    </div>
+                    <div>
+                        <span class="block text-white/40 uppercase tracking-wider text-[10px] mb-1">Focal Length</span>
+                        <span id="exifFocal" class="font-mono text-white">35mm Summicron</span>
+                    </div>
+                </div>
+
+                <div class="h-[1px] bg-white/15"></div>
+
+                <div class="text-white/70 text-sm tracking-wide leading-relaxed">
+                    <span class="text-xs uppercase block text-white/40 mb-1">Story / 摄影手记</span>
+                    <p id="lightboxDesc">手记心声...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== i18n Language System ==========
+        let currentLang = 'zh';
+        let currentFilter = 'all';
+
+        const i18n = {
+            'nav.gallery':       { zh: '底片册',        en: 'Gallery' },
+            'nav.guestbook':     { zh: '留影',          en: 'Guestbook' },
+            'nav.about':         { zh: '关于',          en: 'About' },
+            'nav.lang':          { zh: 'EN',            en: '中' },
+            'hero.tag':          { zh: '禾木 · 阿勒泰', en: 'Hemu · Altay' },
+            'hero.heading':      { zh: '零下二十度<br>等一场日出', en: 'Waiting for Sunrise<br>at -20°C' },
+            'hero.quote':        { zh: '二月的禾木村，凌晨六点，气温零下二十度。我架好三脚架，在及膝的雪地里等了一个多小时。鼻涕冻成了冰，手指在快门键上几乎没有知觉。然后天边开始泛光——先是深蓝，再是粉紫，最后整片天空被金色的晨光点燃。那一刻所有的冷都值得了。', en: 'February in Hemu. 6 a.m., -20°C. I set up my tripod and waited in knee-deep snow for over an hour. My breath crystallized, fingers went numb on the shutter. Then the horizon began to glow — deep blue, then violet, then the whole sky ignited in gold. Every frozen second was worth it.' },
+            'gallery.tag':       { zh: '精选作品',       en: 'Curated Works' },
+            'gallery.heading':   { zh: '底片册',         en: 'Archive' },
+            'guestbook.tag':     { zh: '有什么想对我说的吗', en: 'Leave me a note' },
+            'guestbook.heading': { zh: '留影簿',         en: 'Guestbook' },
+            'guestbook.title':   { zh: '留下墨迹',       en: 'Add Message' },
+            'guestbook.name':    { zh: '称呼',           en: 'Name' },
+            'guestbook.name_ph': { zh: 'e.g. 拾光者',    en: 'e.g. Light Chaser' },
+            'guestbook.theme':   { zh: '选择暗房相纸',   en: 'Choose Paper Tone' },
+            'guestbook.warm':    { zh: '暖白',           en: 'Warm' },
+            'guestbook.sepia':   { zh: '焦糖',           en: 'Sepia' },
+            'guestbook.blue':    { zh: '蓝晒',           en: 'Cyan' },
+            'guestbook.msg':     { zh: '留言',           en: 'Message' },
+            'guestbook.msg_ph':  { zh: '光影流转，写下你想说的话...', en: 'Write something...' },
+            'guestbook.submit':  { zh: '放入显影池',     en: 'Develop Note' },
+            'guestbook.wall':    { zh: '银盐留迹',       en: 'Wall of Shadows' },
+            'guestbook.clear':   { zh: '清空留言',       en: 'Clear Messages' },
+            'card.view':         { zh: '浏览',           en: 'View' },
+            'about.heading':     { zh: '关于我',         en: 'About' },
+            'about.intro':       { zh: '你好，我是<span class="text-[#2c2a27] font-semibold">赵润涵</span>。', en: 'Hi, I\'m <span class="text-[#2c2a27] font-semibold">Roy Zhao</span>.' },
+            'about.equip':       { zh: '设备',           en: 'Equipment' },
+            'about.film':        { zh: '底片',           en: 'Preferred Stock' },
+            'about.location':    { zh: '地区',           en: 'Location' },
+            'footer.copy':       { zh: '© 2026 Roy Zhao / 赵润涵. 保留所有权利。', en: '© 2026 Roy Zhao / 赵润涵. All Rights Reserved.' },
+            'toast.sent':        { zh: '底片已入显影池，正在暗房成像...', en: 'Note in the developer bath, imaging in progress...' },
+            'toast.cleared':     { zh: '已恢复预设留影簿。', en: 'Guestbook restored to defaults.' },
+            'confirm.clear':     { zh: '确定要清空所有留言吗？', en: 'Clear all messages? This cannot be undone.' },
+        };
+
+        function t(key) {
+            return (i18n[key] && i18n[key][currentLang]) || key;
+        }
+
+        function toggleLang() {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            localStorage.setItem('roy_zhao_lang', currentLang);
+            applyLang();
+        }
+
+        function applyLang() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[key] && i18n[key][currentLang]) {
+                    el.innerHTML = i18n[key][currentLang];
+                }
+            });
+            // Update placeholder attributes
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (i18n[key] && i18n[key][currentLang]) {
+                    el.placeholder = i18n[key][currentLang];
+                }
+            });
+            // Re-render gallery with current lang
+            if (typeof renderGallery === 'function') {
+                renderGallery(currentFilter);
+            }
+        }
+
+        function loadLang() {
+            const saved = localStorage.getItem('roy_zhao_lang');
+            if (saved) currentLang = saved;
+            applyLang();
+        }
+
+        // ========== Photography Database ==========
+        const photos = [
+            {
+                id: 1,
+                title: "木雅措垭口",
+                category: "landscape",
+                src: "images/木雅措垭口1.jpg",
+                film: "Digital",
+                camera: "Nikon Z5",
+                aperture: "f/8.0",
+                shutter: "1/250s",
+                focal: "24-200mm",
+                location: "四川 · 木雅措垭口",
+                desc: "川西高原的垭口之上，经幡在稀薄的空气里猎猎作响。远处的雪山沉默如谜。"
+            },
+            {
+                id: 2,
+                title: "禾木晨光",
+                category: "landscape",
+                src: "images/URC_2245.jpg",
+                film: "Digital",
+                camera: "Nikon Z7Ⅱ",
+                aperture: "f/8.0",
+                shutter: "1/125s",
+                focal: "24-200mm",
+                location: "新疆 · 禾木",
+                desc: "清晨第一缕光越过山脊，落在雪原上。整个村子还在沉睡，只有光和影子在对话。"
+            },
+            {
+                id: 3,
+                title: "雪岭之间",
+                category: "landscape",
+                src: "images/URC_2558.jpg",
+                film: "Digital",
+                camera: "Nikon Z7Ⅱ",
+                aperture: "f/5.6",
+                shutter: "1/500s",
+                focal: "24-200mm",
+                location: "新疆 · 阿勒泰",
+                desc: "越野车在雪原上划出一道弧线。白不是一种颜色，是一万种灰调。"
+            },
+            {
+                id: 4,
+                title: "日照金山",
+                category: "landscape",
+                src: "images/URC_2624.jpg",
+                film: "Digital",
+                camera: "Nikon Z7Ⅱ",
+                aperture: "f/8.0",
+                shutter: "1/250s",
+                focal: "24-200mm",
+                location: "新疆 · 阿勒泰",
+                desc: "日落时分的五分钟奇迹。山的轮廓被染成橘金，然后迅速暗去。"
+            },
+            {
+                id: 5,
+                title: "蓝调村落",
+                category: "landscape",
+                src: "images/URC_3014.jpg",
+                film: "Digital",
+                camera: "Nikon Z7Ⅱ",
+                aperture: "f/4.0",
+                shutter: "1/30s",
+                focal: "24-200mm",
+                location: "新疆 · 禾木",
+                desc: "蓝调时刻的禾木，木屋的窗口亮起暖灯。冷与暖在底片上达成和解。"
+            },
+            {
+                id: 6,
+                title: "HDR 光影实验",
+                category: "street",
+                src: "images/ZRH_4596-HDR.jpg",
+                film: "Digital",
+                camera: "Nikon Z5",
+                aperture: "f/5.6",
+                shutter: "1/60s",
+                focal: "24-200mm",
+                location: "深圳",
+                desc: "高动态范围下的光影博弈，亮部与暗部各自保留着细节的尊严。"
+            },
+            {
+                id: 7,
+                title: "暗调叙事",
+                category: "street",
+                src: "images/ZRH_5480-已增强-NR.jpg",
+                film: "Digital",
+                camera: "Nikon Z5",
+                aperture: "f/2.8",
+                shutter: "1/125s",
+                focal: "24-200mm",
+                location: "深圳",
+                desc: "暗部降噪后的画面呈现出胶卷般的质感。数字也可以很温柔。"
+            },
+            {
+                id: 8,
+                title: "日常切片",
+                category: "portrait",
+                src: "images/DSC_1827.jpg",
+                film: "Digital",
+                camera: "Nikon Z5",
+                aperture: "f/2.0",
+                shutter: "1/250s",
+                focal: "50mm",
+                location: "深圳",
+                desc: "平凡生活里的某个瞬间。5219电影卷特有的柔润色彩，让日常也变得有质感。"
+            }
+        ];
+
+        // ========== Admin Data Bridge (syncs with admin.html) ==========
+        (function loadAdminData() {
+            try {
+                const raw = localStorage.getItem('roy_zhao_admin_data');
+                if (!raw) return;
+                const admin = JSON.parse(raw);
+
+                if (admin.photos && admin.photos.length) {
+                    photos.length = 0;
+                    admin.photos.forEach((p, i) => {
+                        photos.push({
+                            id: i + 1, title: p.title || '', category: p.category || 'landscape',
+                            src: p.src || '', film: p.film || 'Digital', camera: p.camera || '',
+                            aperture: p.aperture || '', shutter: p.shutter || '', focal: p.focal || '',
+                            location: p.location || '', desc: p.desc || ''
+                        });
+                    });
+                }
+
+                if (admin.hero) {
+                    const h = admin.hero;
+                    if (h.tagZh) i18n['hero.tag'].zh = h.tagZh;
+                    if (h.tagEn) i18n['hero.tag'].en = h.tagEn;
+                    if (h.headingZh) i18n['hero.heading'].zh = h.headingZh;
+                    if (h.headingEn) i18n['hero.heading'].en = h.headingEn;
+                    if (h.quoteZh) i18n['hero.quote'].zh = h.quoteZh;
+                    if (h.quoteEn) i18n['hero.quote'].en = h.quoteEn;
+                    if (h.src) {
+                        const heroImg = document.querySelector('img[alt="禾木村 / 阿勒泰地区"]');
+                        if (heroImg) heroImg.src = h.src;
+                    }
+                    if (h.location) {
+                        const locEl = document.querySelector('.mt-6.flex.justify-between span:first-child');
+                        if (locEl) locEl.textContent = h.location;
+                    }
+                    if (h.gear) {
+                        const gearEl = document.querySelector('.mt-6.flex.justify-between span:last-child');
+                        if (gearEl) gearEl.textContent = h.gear;
+                    }
+                }
+
+                if (admin.about) {
+                    const a = admin.about;
+                    if (a.introZh) i18n['about.intro'].zh = a.introZh;
+                    if (a.introEn) i18n['about.intro'].en = a.introEn;
+                    if (a.portrait) {
+                        const portraitImg = document.querySelector('#about-section img[alt="Photographer Portrait"]');
+                        if (portraitImg) portraitImg.src = a.portrait;
+                    }
+                    if (a.portraitLabel) {
+                        const labelEl = document.querySelector('#about-section .font-mono');
+                        if (labelEl) labelEl.textContent = a.portraitLabel;
+                    }
+                }
+
+                if (admin.guestbook) {
+                    const g = admin.guestbook;
+                    if (g.tagZh) i18n['guestbook.tag'].zh = g.tagZh;
+                    if (g.tagEn) i18n['guestbook.tag'].en = g.tagEn;
+                    if (g.headingZh) i18n['guestbook.heading'].zh = g.headingZh;
+                    if (g.headingEn) i18n['guestbook.heading'].en = g.headingEn;
+                }
+
+                console.log('📸 Admin data synced from editor');
+            } catch (e) { console.warn('Admin sync failed:', e); }
+        })();
+
+        // Default Messages Array
+        const defaultMessages = [
+            {
+                id: 1,
+                name: "雨中的旅人",
+                message: "在《东京暮色》里看到了久违的胶片颗粒质感，涩谷的雨仿佛也落在我的肩膀。真的太有空气感了！",
+                theme: "vintage",
+                date: "2026.05.20",
+                developing: false
+            },
+            {
+                id: 2,
+                name: "沐光者",
+                message: "作品里的情绪捕捉得极其温柔，能在如今像素堆砌的年代坚持自己冲印和打磨，真的是一种非常高级的奢侈。",
+                theme: "classic",
+                date: "2026.06.01",
+                developing: false
+            },
+            {
+                id: 3,
+                name: "深蓝的海",
+                message: "蓝晒工艺非常有腔调！看到你对银盐的不妥协，很受启发。期待下一次在画廊与你交流暗房工艺。",
+                theme: "cyanotype",
+                date: "2026.06.04",
+                developing: false
+            }
+        ];
+
+        let currentActiveId = 1;
+        let messages = [];
+
+        // Initialize and load guestbook
+        function initGuestbook() {
+            const stored = localStorage.getItem('roy_zhao_portfolio_messages');
+            if (stored) {
+                messages = JSON.parse(stored);
+            } else {
+                messages = [...defaultMessages];
+                localStorage.setItem('roy_zhao_portfolio_messages', JSON.stringify(messages));
+            }
+            renderMessages();
+        }
+
+        // Render Portfolio Grid
+        function renderGallery(filter = 'all') {
+            const grid = document.getElementById('photoGrid');
+            grid.innerHTML = '';
+
+            const filtered = filter === 'all' ? photos : photos.filter(p => p.category === filter);
+
+            filtered.forEach(photo => {
+                const card = document.createElement('div');
+                card.className = "group bg-white p-4 pb-12 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-sm border border-[#e2dcd0] transform hover:-translate-y-1 cursor-pointer";
+                card.onclick = () => openLightbox(photo.id);
+
+                card.innerHTML = `
+                    <div class="aspect-w-4 aspect-h-3 overflow-hidden bg-stone-100 relative">
+                        <img src="${photo.src}" 
+                             alt="${photo.title}" 
+                             class="object-cover w-full h-64 filter grayscale-[5%] sepia-[10%] group-hover:scale-105 duration-700 ease-in-out"
+                             loading="lazy"
+                             onerror="this.src='https://placehold.co/600x450/d6cfc2/2c2a27?text=Film+Photo'">
+                        <div class="absolute inset-0 bg-[#2c2a27]/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                            <span class="text-xs bg-white/95 text-[#2c2a27] px-4 py-2 uppercase tracking-[0.2em] rounded-sm shadow-md font-medium">
+                                <i class="fa-solid fa-magnifying-glass-plus mr-1"></i> ${t('card.view')}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="mt-5 flex flex-col space-y-2">
+                        <div class="flex justify-between items-start">
+                            <h4 class="text-base font-medium tracking-wide text-[#2c2a27] group-hover:text-[#8c8273] transition-colors">
+                                ${photo.title}
+                            </h4>
+                            <span class="text-[10px] font-mono tracking-wider bg-[#faf8f5] px-2 py-0.5 rounded border border-[#e6dfd3] text-[#8c8273]">
+                                ${photo.film.split(' ')[0]}
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs text-[#8c8273] tracking-wider font-light">
+                            <span><i class="fa-solid fa-camera mr-1 text-[10px]"></i> ${photo.camera}</span>
+                            <span>${photo.location}</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Category Filter
+        function filterGallery(category) {
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = "filter-btn px-5 py-2.5 rounded border border-[#c5beb4] text-[#5c554a] hover:border-[#2c2a27] hover:text-[#2c2a27] transition-all";
+            });
+
+            const activeBtn = document.querySelector(`.filter-btn[data-filter="${category}"]`);
+            if(activeBtn) {
+                activeBtn.className = "filter-btn px-5 py-2.5 rounded border-[#2c2a27] bg-[#2c2a27] text-white transition-all font-medium";
+            }
+
+            currentFilter = category;
+            renderGallery(category);
+        }
+
+        // Lightbox Functions
+        function openLightbox(id) {
+            currentActiveId = id;
+            const photo = photos.find(p => p.id === id);
+            if (!photo) return;
+
+            document.getElementById('lightboxImg').src = photo.src;
+            document.getElementById('lightboxTitle').innerText = photo.title;
+            document.getElementById('lightboxFilm').innerText = photo.film;
+            document.getElementById('lightboxLocation').innerHTML = `<i class="fa-solid fa-location-dot mr-1 text-[#8c8273]"></i> ${photo.location}`;
+            document.getElementById('lightboxDesc').innerText = photo.desc;
+
+            document.getElementById('exifCamera').innerText = photo.camera;
+            document.getElementById('exifAperture').innerText = photo.aperture;
+            document.getElementById('exifShutter').innerText = photo.shutter;
+            document.getElementById('exifFocal').innerText = photo.focal;
+
+            const lightbox = document.getElementById('lightbox');
+            lightbox.classList.remove('hidden');
+            setTimeout(() => {
+                lightbox.classList.remove('opacity-0');
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox');
+            lightbox.classList.add('opacity-0');
+            setTimeout(() => {
+                lightbox.classList.add('hidden');
+            }, 300);
+            document.body.style.overflow = '';
+        }
+
+        function nextPhoto() {
+            let nextIndex = photos.findIndex(p => p.id === currentActiveId) + 1;
+            if (nextIndex >= photos.length) nextIndex = 0;
+            openLightbox(photos[nextIndex].id);
+        }
+
+        function prevPhoto() {
+            let prevIndex = photos.findIndex(p => p.id === currentActiveId) - 1;
+            if (prevIndex < 0) prevIndex = photos.length - 1;
+            openLightbox(photos[prevIndex].id);
+        }
+
+        // Guestbook Submit and Polaroid Chemical Developing Simulation
+        function handleGuestbookSubmit(event) {
+            event.preventDefault();
+            
+            const nameInput = document.getElementById('visitorName');
+            const messageInput = document.getElementById('visitorMessage');
+            const selectedTheme = document.querySelector('input[name="noteTheme"]:checked').value;
+            
+            const newId = Date.now();
+            const today = new Date();
+            const dateStr = today.getFullYear() + '.' + String(today.getMonth() + 1).padStart(2, '0') + '.' + String(today.getDate()).padStart(2, '0');
+
+            const newNote = {
+                id: newId,
+                name: nameInput.value,
+                message: messageInput.value,
+                theme: selectedTheme,
+                date: dateStr,
+                developing: true 
+            };
+
+            messages.unshift(newNote);
+            localStorage.setItem('roy_zhao_portfolio_messages', JSON.stringify(messages));
+            
+            renderMessages();
+            showToast(t('toast.sent'));
+
+            nameInput.value = '';
+            messageInput.value = '';
+
+            // Complete simulation after 3.5 seconds
+            setTimeout(() => {
+                const updatedIndex = messages.findIndex(m => m.id === newId);
+                if (updatedIndex !== -1) {
+                    messages[updatedIndex].developing = false;
+                    localStorage.setItem('roy_zhao_portfolio_messages', JSON.stringify(messages));
+                    renderMessages();
+                }
+            }, 3500);
+        }
+
+        // Render Guestbook Cards (Contrast nicely on the gray wall)
+        function renderMessages() {
+            const container = document.getElementById('messageBoard');
+            container.innerHTML = '';
+
+            messages.forEach(msg => {
+                const card = document.createElement('div');
+                
+                let themeClasses = "bg-[#fffdf9] border-[#e2dcd0] text-[#2c2a27]";
+                let headerIndicator = "text-[#8c8273]";
+                
+                if (msg.theme === 'vintage') {
+                    themeClasses = "bg-[#faf0dc] border-[#d8cbb5] text-[#3d3326]";
+                    headerIndicator = "text-[#a38b6c]";
+                } else if (msg.theme === 'cyanotype') {
+                    themeClasses = "bg-[#e8edf2] border-[#c5d0db] text-[#1c2e42]";
+                    headerIndicator = "text-[#4b6a8a]";
+                }
+
+                let devStyleClass = "";
+                let indicatorMarkup = "";
+                if (msg.developing) {
+                    devStyleClass = "developing-card relative overflow-hidden";
+                    indicatorMarkup = `
+                        <div class="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center text-xs tracking-widest text-[#2c2a27] font-mono animate-pulse z-20">
+                            <i class="fa-solid fa-spinner animate-spin text-[#737578] mb-2 text-sm"></i>
+                            <span>显影成像中...</span>
+                        </div>
+                    `;
+                }
+
+                card.className = `p-5 pb-8 shadow-xl rounded-sm border ${themeClasses} transform rotate-${(msg.id % 3) - 1} hover:rotate-0 transition-transform duration-300 relative ${devStyleClass}`;
+                
+                card.innerHTML = `
+                    ${indicatorMarkup}
+                    <div class="flex justify-between items-center border-b border-black/5 pb-3 mb-3 text-xs">
+                        <span class="font-semibold tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-quote-left text-[10px] opacity-40"></i>
+                            ${msg.name}
+                        </span>
+                        <span class="font-mono text-[10px] ${headerIndicator}">${msg.date}</span>
+                    </div>
+                    <p class="text-xs md:text-sm leading-relaxed tracking-wide font-light whitespace-pre-wrap min-h-[4rem]">
+                        ${msg.message}
+                    </p>
+                    <div class="mt-4 pt-3 border-t border-black/5 flex justify-between items-center text-[9px] font-mono uppercase tracking-[0.2em] ${headerIndicator}">
+                        <span>#${msg.theme} Process</span>
+                        <span>Silver Salt Print</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Clear Local messages
+        function clearMessages() {
+            if (confirm(currentLang === 'zh' ? '确定要清空所有留言吗？' : 'Clear all messages? This cannot be undone.')) {
+                localStorage.removeItem('roy_zhao_portfolio_messages');
+                initGuestbook();
+                showToast(t('toast.cleared'));
+            }
+        }
+
+        // Custom Toast Notification
+        function showToast(text) {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastText').innerText = text;
+            
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 4000);
+        }
+
+        // Keyboard Actions
+        document.addEventListener('keydown', (e) => {
+            const lightbox = document.getElementById('lightbox');
+            if (lightbox && !lightbox.classList.contains('hidden')) {
+                if (e.key === 'Escape') closeLightbox();
+                if (e.key === 'ArrowRight') nextPhoto();
+                if (e.key === 'ArrowLeft') prevPhoto();
+            }
+        });
+
+        // Swipe Gestures for Mobile Lightbox
+        let touchstartX = 0;
+        let touchendX = 0;
+        const gestureZone = document.getElementById('lightbox');
+
+        gestureZone.addEventListener('touchstart', function(event) {
+            touchstartX = event.changedTouches[0].screenX;
+        }, false);
+
+        gestureZone.addEventListener('touchend', function(event) {
+            touchendX = event.changedTouches[0].screenX;
+            handleGesture();
+        }, false);
+
+        function handleGesture() {
+            if (touchendX < touchstartX - 50) nextPhoto();
+            if (touchendX > touchstartX + 50) prevPhoto();
+        }
+
+        // Smooth Scrolling Anchor
+        function scrollToSection(id) {
+            const target = document.getElementById(id);
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        // On Load Execution
+        window.onload = function () {
+            loadLang();
+            renderGallery('all');
+            initGuestbook();
+        };
+    </script>
+</body>
+</html>

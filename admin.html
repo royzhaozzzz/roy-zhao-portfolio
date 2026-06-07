@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑后台 — Roy Zhao Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --bg: #f5f4f0; --panel: #fff; --accent: #2c2a27; --border: #e2dcd0; --muted: #8c8273; }
+        body { font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; background: #e8e6e1; }
+        .card { background: var(--panel); border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .tab-btn { transition: all 0.15s; }
+        .tab-btn.active { background: var(--accent); color: #fff; }
+        .tab-btn:not(.active):hover { background: #e8e6e1; }
+        .input-field { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; transition: border-color 0.15s; background: #fafaf9; }
+        .input-field:focus { outline: none; border-color: var(--accent); background: #fff; }
+        .label-sm { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 3px; display: block; }
+        .btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-primary { background: var(--accent); color: #fff; border: none; }
+        .btn-primary:hover { background: #444; }
+        .btn-outline { background: #fff; color: var(--accent); border: 1px solid var(--border); }
+        .btn-outline:hover { border-color: var(--accent); }
+        .btn-danger { background: #fff; color: #c44; border: 1px solid #ecc; }
+        .btn-danger:hover { background: #fef2f2; }
+        .btn-sm { padding: 4px 10px; font-size: 11px; }
+        .photo-card { transition: all 0.15s; cursor: grab; }
+        .photo-card:active { cursor: grabbing; }
+        .photo-card.dragging { opacity: 0.4; }
+        .photo-card.drag-over { border-color: var(--accent); background: #fafaf8; }
+        .photo-thumb { width: 140px; height: 100px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+        .status-dot.saved { background: #4a4; }
+        .status-dot.unsaved { background: #ea4; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        iframe.preview-frame { width: 100%; height: 100%; border: none; border-radius: 8px; }
+
+        /* Drag ghost */
+        .drag-ghost { position: fixed; pointer-events: none; z-index: 9999; opacity: 0.85; transform: rotate(1deg); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- ========== TOP BAR ========== -->
+    <header class="bg-[#2c2a27] text-white px-6 py-2.5 flex items-center justify-between sticky top-0 z-50 shadow-lg">
+        <div class="flex items-center gap-4">
+            <span class="font-light tracking-wide text-lg">📸 编辑后台</span>
+            <span class="text-[10px] text-white/40 hidden sm:inline">Roy Zhao Portfolio Editor</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <span id="saveIndicator" class="text-[10px] text-white/60 flex items-center gap-1.5 mr-3">
+                <span class="status-dot saved"></span> <span id="saveLabel">已保存</span>
+            </span>
+            <button onclick="resetAll()" class="btn btn-sm text-white/70 hover:text-white border border-white/20 rounded text-[11px]">
+                <i class="fa-solid fa-rotate-left"></i> 重置
+            </button>
+            <button onclick="importFromPage()" class="btn btn-sm text-white/70 hover:text-white border border-white/20 rounded text-[11px]">
+                <i class="fa-solid fa-file-import"></i> 导入
+            </button>
+            <button onclick="exportJSON()" class="btn btn-sm bg-white text-[#2c2a27] rounded text-[11px] hover:bg-gray-200">
+                <i class="fa-solid fa-download"></i> 导出
+            </button>
+        </div>
+    </header>
+
+    <!-- ========== TABS ========== -->
+    <nav class="bg-white border-b px-4 flex gap-0 sticky top-[41px] z-40 shadow-sm overflow-x-auto">
+        <button class="tab-btn active px-4 py-2.5 text-sm tracking-wide rounded-t-lg whitespace-nowrap" data-tab="hero" onclick="switchTab('hero')">
+            <i class="fa-solid fa-image mr-1.5"></i> Hero 首页
+        </button>
+        <button class="tab-btn px-4 py-2.5 text-sm tracking-wide rounded-t-lg whitespace-nowrap" data-tab="gallery" onclick="switchTab('gallery')">
+            <i class="fa-solid fa-images mr-1.5"></i> 底片册 <span id="photoCountBadge" class="text-[10px] bg-gray-200 rounded-full px-1.5 py-0.5 ml-0.5">8</span>
+        </button>
+        <button class="tab-btn px-4 py-2.5 text-sm tracking-wide rounded-t-lg whitespace-nowrap" data-tab="about" onclick="switchTab('about')">
+            <i class="fa-solid fa-user mr-1.5"></i> 关于我
+        </button>
+        <button class="tab-btn px-4 py-2.5 text-sm tracking-wide rounded-t-lg whitespace-nowrap" data-tab="guestbook" onclick="switchTab('guestbook')">
+            <i class="fa-solid fa-book mr-1.5"></i> 留影簿
+        </button>
+    </nav>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <main class="flex-1 p-4 md:p-5 max-w-[1600px] mx-auto w-full">
+
+        <!-- ===== HERO TAB ===== -->
+        <div id="tab-hero" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <!-- Left: Editor -->
+                <div class="card p-5 space-y-4">
+                    <h3 class="font-medium text-sm tracking-wide flex items-center gap-2">
+                        <i class="fa-solid fa-pen-to-square text-gray-400"></i> Hero 区域编辑
+                    </h3>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="label-sm">中文标签</label><input class="input-field" id="hero-tag-zh" placeholder="禾木 · 阿勒泰"></div>
+                        <div><label class="label-sm">English Tag</label><input class="input-field" id="hero-tag-en" placeholder="Hemu · Altay"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="label-sm">中文标题 (换行用 &lt;br&gt;)</label><textarea class="input-field" id="hero-heading-zh" rows="2" placeholder="零下二十度<br>等一场日出"></textarea></div>
+                        <div><label class="label-sm">English Heading</label><textarea class="input-field" id="hero-heading-en" rows="2" placeholder="Waiting for Sunrise<br>at -20°C"></textarea></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="label-sm">中文描述</label><textarea class="input-field" id="hero-quote-zh" rows="4" placeholder="描述文字..."></textarea></div>
+                        <div><label class="label-sm">English Description</label><textarea class="input-field" id="hero-quote-en" rows="4" placeholder="Description..."></textarea></div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div><label class="label-sm">Hero 图片路径</label><input class="input-field" id="hero-src"></div>
+                        <div><label class="label-sm">左侧标注 (#01 ...)</label><input class="input-field" id="hero-location"></div>
+                        <div><label class="label-sm">右侧标注 (设备)</label><input class="input-field" id="hero-gear"></div>
+                    </div>
+                </div>
+
+                <!-- Right: Live Preview -->
+                <div class="card p-5 flex flex-col">
+                    <h3 class="font-medium text-sm tracking-wide flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-eye text-gray-400"></i> 实时预览 (中文)
+                        <span class="text-[10px] text-gray-400 font-normal ml-auto">跟随输入实时更新</span>
+                    </h3>
+                    <div class="flex-1 bg-[#fafaf9] rounded-lg border p-5 overflow-auto min-h-[300px]">
+                        <span class="text-[11px] uppercase tracking-[0.4em] text-gray-500" id="preview-hero-tag">标签</span>
+                        <h2 class="text-2xl md:text-3xl font-light leading-snug mt-1.5 text-[#2c2a27]" id="preview-hero-heading">标题</h2>
+                        <div class="w-10 h-[1px] bg-gray-300 my-3"></div>
+                        <p class="text-sm leading-relaxed text-gray-700" id="preview-hero-quote">描述文字...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== GALLERY TAB ===== -->
+        <div id="tab-gallery" class="tab-content" style="display:none">
+            <!-- Toolbar -->
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div class="flex items-center gap-3">
+                    <h3 class="font-medium text-sm tracking-wide">底片册管理</h3>
+                    <span class="text-xs text-gray-400"><span id="photoCount">8</span> 张照片</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="addPhoto()" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> 添加照片</button>
+                    <button onclick="batchEdit()" class="btn btn-outline btn-sm"><i class="fa-solid fa-pen"></i> 批量编辑</button>
+                </div>
+            </div>
+
+            <!-- Photo Cards -->
+            <div id="galleryEditor" class="space-y-3">
+                <!-- Dynamically rendered -->
+            </div>
+        </div>
+
+        <!-- ===== ABOUT TAB ===== -->
+        <div id="tab-about" class="tab-content" style="display:none">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div class="card p-5 space-y-4">
+                    <h3 class="font-medium text-sm tracking-wide flex items-center gap-2">
+                        <i class="fa-solid fa-pen-to-square text-gray-400"></i> 关于我 编辑
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="label-sm">自我介绍 (中文)</label><textarea class="input-field" id="about-intro-zh" rows="2"></textarea></div>
+                        <div><label class="label-sm">Intro (EN)</label><textarea class="input-field" id="about-intro-en" rows="2"></textarea></div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div><label class="label-sm">设备</label><input class="input-field" id="about-equip" placeholder="Nikon Z7Ⅱ / Nikon FE2"></div>
+                        <div><label class="label-sm">底片</label><input class="input-field" id="about-film" placeholder="Portra 160 / Kodak 5219"></div>
+                        <div><label class="label-sm">地区</label><input class="input-field" id="about-location" placeholder="深圳 Shenzhen"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="label-sm">Email</label><input class="input-field" id="about-email"></div>
+                        <div><label class="label-sm">微信</label><input class="input-field" id="about-wechat"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="label-sm">头像图片路径</label><input class="input-field" id="about-portrait"></div>
+                        <div><label class="label-sm">头像下方标注</label><input class="input-field" id="about-portrait-label"></div>
+                    </div>
+                    <div class="flex gap-2 pt-2">
+                        <label class="label-sm w-full">抖音链接 <input class="input-field" id="about-douyin"></label>
+                        <label class="label-sm w-full">小红书链接 <input class="input-field" id="about-xhs"></label>
+                        <label class="label-sm w-full">微博链接 <input class="input-field" id="about-weibo"></label>
+                    </div>
+                </div>
+                <div class="card p-5 flex flex-col">
+                    <h3 class="font-medium text-sm tracking-wide flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-eye text-gray-400"></i> 预览
+                    </h3>
+                    <div class="flex-1 bg-[#fafaf9] rounded-lg border p-5 min-h-[250px]">
+                        <h3 class="text-xl font-light text-[#2c2a27]">关于我</h3>
+                        <div class="w-8 h-[1px] bg-gray-300 my-3"></div>
+                        <p class="text-sm text-gray-700" id="preview-about-intro">自我介绍...</p>
+                        <div class="grid grid-cols-3 gap-3 mt-4 pt-4 border-t text-xs">
+                            <div><span class="text-gray-400">设备</span><br><span class="font-medium" id="preview-about-equip">-</span></div>
+                            <div><span class="text-gray-400">底片</span><br><span class="font-medium" id="preview-about-film">-</span></div>
+                            <div><span class="text-gray-400">地区</span><br><span class="font-medium" id="preview-about-location">-</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== GUESTBOOK TAB ===== -->
+        <div id="tab-guestbook" class="tab-content" style="display:none">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <div class="card p-5 space-y-4">
+                    <h3 class="font-medium text-sm tracking-wide flex items-center gap-2">
+                        <i class="fa-solid fa-pen-to-square text-gray-400"></i> 留影簿 编辑
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="label-sm">副标题 (中文)</label><input class="input-field" id="gb-tag-zh"></div>
+                        <div><label class="label-sm">Tag (EN)</label><input class="input-field" id="gb-tag-en"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="label-sm">标题 (中文)</label><input class="input-field" id="gb-heading-zh"></div>
+                        <div><label class="label-sm">Heading (EN)</label><input class="input-field" id="gb-heading-en"></div>
+                    </div>
+                </div>
+                <div class="card p-5 flex flex-col">
+                    <h3 class="font-medium text-sm tracking-wide flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-eye text-gray-400"></i> 预览
+                    </h3>
+                    <div class="flex-1 bg-[#fafaf9] rounded-lg border p-5 text-center min-h-[150px] flex flex-col justify-center">
+                        <span class="text-xs text-gray-500" id="preview-gb-tag">副标题</span>
+                        <h3 class="text-xl font-light mt-1.5 text-[#2c2a27]" id="preview-gb-heading">标题</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ========== TOAST ========== -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-[#2c2a27] text-white px-5 py-3 rounded-lg shadow-xl z-50 text-sm transition-all duration-300 translate-y-20 opacity-0 pointer-events-none flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-green-400 text-xs"></i>
+        <span id="toastText"></span>
+    </div>
+
+<script>
+// ========== DATA STORE ==========
+let photos = [];
+let heroData = {};
+let aboutData = {};
+let gbData = {};
+let saveTimeout = null;
+
+const DEFAULTS = {
+    photos: [
+        { id:1, title:"木雅措垭口", category:"landscape", src:"images/木雅措垭口1.jpg", film:"Digital", camera:"Nikon Z5", aperture:"f/8.0", shutter:"1/250s", focal:"24-200mm", location:"四川 · 木雅措垭口", desc:"川西高原的垭口之上，经幡在稀薄的空气里猎猎作响。远处的雪山沉默如谜。" },
+        { id:2, title:"禾木晨光", category:"landscape", src:"images/URC_2245.jpg", film:"Digital", camera:"Nikon Z7Ⅱ", aperture:"f/8.0", shutter:"1/125s", focal:"24-200mm", location:"新疆 · 禾木", desc:"清晨第一缕光越过山脊，落在雪原上。" },
+        { id:3, title:"雪岭之间", category:"landscape", src:"images/URC_2558.jpg", film:"Digital", camera:"Nikon Z7Ⅱ", aperture:"f/5.6", shutter:"1/500s", focal:"24-200mm", location:"新疆 · 阿勒泰", desc:"越野车在雪原上划出一道弧线。" },
+        { id:4, title:"日照金山", category:"landscape", src:"images/URC_2624.jpg", film:"Digital", camera:"Nikon Z7Ⅱ", aperture:"f/8.0", shutter:"1/250s", focal:"24-200mm", location:"新疆 · 阿勒泰", desc:"日落时分的五分钟奇迹。" },
+        { id:5, title:"蓝调村落", category:"landscape", src:"images/URC_3014.jpg", film:"Digital", camera:"Nikon Z7Ⅱ", aperture:"f/4.0", shutter:"1/30s", focal:"24-200mm", location:"新疆 · 禾木", desc:"蓝调时刻的禾木。" },
+        { id:6, title:"HDR 光影实验", category:"street", src:"images/ZRH_4596-HDR.jpg", film:"Digital", camera:"Nikon Z5", aperture:"f/5.6", shutter:"1/60s", focal:"24-200mm", location:"深圳", desc:"高动态范围下的光影博弈。" },
+        { id:7, title:"暗调叙事", category:"street", src:"images/ZRH_5480-已增强-NR.jpg", film:"Digital", camera:"Nikon Z5", aperture:"f/2.8", shutter:"1/125s", focal:"24-200mm", location:"深圳", desc:"暗部降噪后的画面。" },
+        { id:8, title:"日常切片", category:"portrait", src:"images/DSC_1827.jpg", film:"Digital", camera:"Nikon Z5", aperture:"f/2.0", shutter:"1/250s", focal:"50mm", location:"深圳", desc:"平凡生活里的某个瞬间。" }
+    ],
+    hero: {
+        tagZh:'禾木 · 阿勒泰', tagEn:'Hemu · Altay',
+        headingZh:'零下二十度<br>等一场日出', headingEn:'Waiting for Sunrise<br>at -20°C',
+        quoteZh:'二月的禾木村，凌晨六点，气温零下二十度。我架好三脚架，在及膝的雪地里等了一个多小时。鼻涕冻成了冰，手指在快门键上几乎没有知觉。然后天边开始泛光——先是深蓝，再是粉紫，最后整片天空被金色的晨光点燃。那一刻所有的冷都值得了。',
+        quoteEn:'February in Hemu. 6 a.m., -20°C. I set up my tripod and waited in knee-deep snow for over an hour. My breath crystallized, fingers went numb on the shutter. Then the horizon began to glow. Every frozen second was worth it.',
+        src:'images/URC_2374.jpg', location:'#01 禾木村 / 阿勒泰地区', gear:'Nikon Z7Ⅱ 24-200mm F4-6.3'
+    },
+    about: {
+        introZh:'你好，我是<span class="text-[#2c2a27] font-semibold">赵润涵</span>。',
+        introEn:'Hi, I\'m <span class="text-[#2c2a27] font-semibold">Roy Zhao</span>.',
+        equip:'Nikon Z7Ⅱ / Nikon FE2', film:'Portra 160 / Kodak 5219', location:'深圳 Shenzhen',
+        email:'roy_zrh@foxmail.com', wechat:'royzrh',
+        portrait:'images/ROY_8128_01.jpg', portraitLabel:'Self Portrait / Nikon Z5',
+        douyin:'https://v.douyin.com/ortI32aj29M/', xhs:'https://xhslink.com/m/31Yz5FdEYJM', weibo:'https://m.weibo.cn/u/6174044607'
+    },
+    guestbook: { tagZh:'有什么想对我说的吗', tagEn:'Leave me a note', headingZh:'留影簿', headingEn:'Guestbook' }
+};
+
+// ========== INIT ==========
+function loadData() {
+    const saved = localStorage.getItem('roy_zhao_admin_data');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            photos = data.photos || DEFAULTS.photos;
+            heroData = data.hero || DEFAULTS.hero;
+            aboutData = data.about || DEFAULTS.about;
+            gbData = data.guestbook || DEFAULTS.guestbook;
+        } catch(e) { loadDefaults(); }
+    } else {
+        loadDefaults();
+    }
+    fillForms();
+    renderGalleryEditor();
+}
+
+function loadDefaults() {
+    photos = JSON.parse(JSON.stringify(DEFAULTS.photos));
+    heroData = JSON.parse(JSON.stringify(DEFAULTS.hero));
+    aboutData = JSON.parse(JSON.stringify(DEFAULTS.about));
+    gbData = JSON.parse(JSON.stringify(DEFAULTS.guestbook));
+}
+
+// ========== FILL FORMS ==========
+function fillForms() {
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    // Hero
+    set('hero-tag-zh', heroData.tagZh); set('hero-tag-en', heroData.tagEn);
+    set('hero-heading-zh', heroData.headingZh); set('hero-heading-en', heroData.headingEn);
+    set('hero-quote-zh', heroData.quoteZh); set('hero-quote-en', heroData.quoteEn);
+    set('hero-src', heroData.src); set('hero-location', heroData.location); set('hero-gear', heroData.gear);
+    // About
+    set('about-intro-zh', aboutData.introZh); set('about-intro-en', aboutData.introEn);
+    set('about-equip', aboutData.equip); set('about-film', aboutData.film); set('about-location', aboutData.location);
+    set('about-email', aboutData.email); set('about-wechat', aboutData.wechat);
+    set('about-portrait', aboutData.portrait); set('about-portrait-label', aboutData.portraitLabel);
+    set('about-douyin', aboutData.douyin); set('about-xhs', aboutData.xhs); set('about-weibo', aboutData.weibo);
+    // Guestbook
+    set('gb-tag-zh', gbData.tagZh); set('gb-tag-en', gbData.tagEn);
+    set('gb-heading-zh', gbData.headingZh); set('gb-heading-en', gbData.headingEn);
+    // Previews
+    updateHeroPreview(); updateAboutPreview(); updateGbPreview();
+}
+
+// ========== PREVIEW UPDATES ==========
+function updateHeroPreview() {
+    const tag = document.getElementById('preview-hero-tag');
+    const heading = document.getElementById('preview-hero-heading');
+    const quote = document.getElementById('preview-hero-quote');
+    if (tag) tag.textContent = document.getElementById('hero-tag-zh')?.value || '';
+    if (heading) heading.innerHTML = document.getElementById('hero-heading-zh')?.value || '';
+    if (quote) quote.textContent = document.getElementById('hero-quote-zh')?.value || '';
+}
+function updateAboutPreview() {
+    const intro = document.getElementById('preview-about-intro');
+    if (intro) intro.innerHTML = document.getElementById('about-intro-zh')?.value || '';
+    const equip = document.getElementById('preview-about-equip');
+    if (equip) equip.textContent = document.getElementById('about-equip')?.value || '-';
+    const film = document.getElementById('preview-about-film');
+    if (film) film.textContent = document.getElementById('about-film')?.value || '-';
+    const loc = document.getElementById('preview-about-location');
+    if (loc) loc.textContent = document.getElementById('about-location')?.value || '-';
+}
+function updateGbPreview() {
+    const tag = document.getElementById('preview-gb-tag');
+    if (tag) tag.textContent = document.getElementById('gb-tag-zh')?.value || '';
+    const heading = document.getElementById('preview-gb-heading');
+    if (heading) heading.textContent = document.getElementById('gb-heading-zh')?.value || '';
+}
+
+// ========== TAB SWITCHING ==========
+function switchTab(name) {
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    const tab = document.getElementById('tab-' + name);
+    if (tab) tab.style.display = '';
+    const btn = document.querySelector(`[data-tab="${name}"]`);
+    if (btn) btn.classList.add('active');
+}
+
+// ========== GALLERY EDITOR ==========
+function renderGalleryEditor() {
+    const container = document.getElementById('galleryEditor');
+    document.getElementById('photoCount').textContent = photos.length;
+    const badge = document.getElementById('photoCountBadge');
+    if (badge) badge.textContent = photos.length;
+
+    container.innerHTML = photos.map((p, i) => `
+        <div class="photo-card card p-3 flex gap-4 items-start group" data-index="${i}"
+             draggable="true"
+             ondragstart="dragStart(event, ${i})"
+             ondragover="dragOver(event)"
+             ondragleave="dragLeave(event)"
+             ondrop="drop(event, ${i})"
+             ondragend="dragEnd(event)">
+            <!-- Thumbnail -->
+            <div class="relative flex-shrink-0">
+                <img src="${p.src}" alt="" class="photo-thumb bg-gray-100"
+                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22140%22 height=%22100%22><rect fill=%22%23ddd%22 width=%22140%22 height=%22100%22/><text x=%2270%22 y=%2255%22 text-anchor=%22middle%22 fill=%22%23999%22 font-size=%2211%22>No Image</text></svg>'">
+                <span class="absolute top-1 left-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded">#${i+1}</span>
+            </div>
+            <!-- Fields -->
+            <div class="flex-1 grid grid-cols-2 md:grid-cols-4 gap-2 min-w-0">
+                ${field('标题', 'title', i, p.title, 6)}
+                ${field('地点', 'location', i, p.location, 4)}
+                ${field('相机', 'camera', i, p.camera, 4)}
+                ${field('底片', 'film', i, p.film, 4)}
+                ${field('光圈', 'aperture', i, p.aperture, 3)}
+                ${field('快门', 'shutter', i, p.shutter, 3)}
+                ${field('焦距', 'focal', i, p.focal, 3)}
+                ${field('路径', 'src', i, p.src, 3)}
+                <div class="col-span-2 md:col-span-4">
+                    <label class="label-sm">描述</label>
+                    <input class="input-field" value="${escapeHtml(p.desc||'')}" onchange="updatePhoto(${i},'desc',this.value)">
+                </div>
+            </div>
+            <!-- Actions -->
+            <div class="flex flex-col gap-1 flex-shrink-0 opacity-60 group-hover:opacity-100 transition-opacity">
+                <button onclick="duplicatePhoto(${i})" class="p-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded" title="复制"><i class="fa-solid fa-copy"></i></button>
+                <button onclick="movePhoto(${i},-1)" class="p-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded ${i===0?'opacity-20':''}" title="上移" ${i===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button>
+                <button onclick="movePhoto(${i},1)" class="p-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded ${i===photos.length-1?'opacity-20':''}" title="下移" ${i===photos.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button>
+                <button onclick="deletePhoto(${i})" class="p-1.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 rounded mt-2" title="删除"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function field(label, key, index, value, cols) {
+    return `<div><label class="label-sm">${label}</label><input class="input-field" value="${escapeHtml(value||'')}" onchange="updatePhoto(${index},'${key}',this.value)"></div>`;
+}
+
+function escapeHtml(str) { return (str||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function updatePhoto(index, field, value) {
+    photos[index][field] = value;
+    scheduleSave();
+}
+
+function movePhoto(index, direction) {
+    const newIdx = index + direction;
+    if (newIdx < 0 || newIdx >= photos.length) return;
+    [photos[index], photos[newIdx]] = [photos[newIdx], photos[index]];
+    photos.forEach((p, i) => p.id = i + 1);
+    renderGalleryEditor();
+    scheduleSave();
+}
+
+function deletePhoto(index) {
+    if (!confirm(`删除照片 #${index+1}「${photos[index].title}」？`)) return;
+    photos.splice(index, 1);
+    photos.forEach((p, i) => p.id = i + 1);
+    renderGalleryEditor();
+    scheduleSave();
+    showToast('照片已删除');
+}
+
+function duplicatePhoto(index) {
+    const orig = photos[index];
+    const copy = JSON.parse(JSON.stringify(orig));
+    copy.id = Math.max(0, ...photos.map(p => p.id)) + 1;
+    copy.title = (copy.title || '') + ' (副本)';
+    photos.splice(index + 1, 0, copy);
+    photos.forEach((p, i) => p.id = i + 1);
+    renderGalleryEditor();
+    scheduleSave();
+    showToast('照片已复制');
+}
+
+function addPhoto() {
+    photos.push({
+        id: Math.max(0, ...photos.map(p => p.id)) + 1,
+        title:'新照片', category:'landscape', src:'images/', film:'Digital',
+        camera:'Nikon Z7Ⅱ', aperture:'f/5.6', shutter:'1/125s', focal:'24-200mm', location:'', desc:''
+    });
+    renderGalleryEditor();
+    scheduleSave();
+    const last = document.getElementById('galleryEditor').lastElementChild;
+    if (last) { last.scrollIntoView({ behavior:'smooth' }); last.classList.add('ring-2', 'ring-blue-300'); setTimeout(() => last.classList.remove('ring-2','ring-blue-300'), 2000); }
+}
+
+function batchEdit() {
+    const field = prompt('批量设置哪个字段？\n(title / camera / film / location / aperture / shutter / focal)', 'camera');
+    if (!field) return;
+    const value = prompt(`将所有照片的 "${field}" 设置为：`, '');
+    if (value === null) return;
+    photos.forEach(p => { p[field] = value; });
+    renderGalleryEditor();
+    scheduleSave();
+    showToast(`已批量更新 ${field}`);
+}
+
+// ========== DRAG AND DROP ==========
+let dragIndex = null;
+
+function dragStart(e, index) {
+    dragIndex = index;
+    e.target.closest('.photo-card').classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index);
+}
+
+function dragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const card = e.target.closest('.photo-card');
+    if (card) card.classList.add('drag-over');
+}
+
+function dragLeave(e) {
+    const card = e.target.closest('.photo-card');
+    if (card) card.classList.remove('drag-over');
+}
+
+function drop(e, targetIndex) {
+    e.preventDefault();
+    document.querySelectorAll('.photo-card').forEach(c => c.classList.remove('drag-over','dragging'));
+    if (dragIndex === null || dragIndex === targetIndex) return;
+    const [moved] = photos.splice(dragIndex, 1);
+    photos.splice(targetIndex, 0, moved);
+    photos.forEach((p, i) => p.id = i + 1);
+    dragIndex = null;
+    renderGalleryEditor();
+    scheduleSave();
+    showToast('排序已更新');
+}
+
+function dragEnd(e) {
+    document.querySelectorAll('.photo-card').forEach(c => c.classList.remove('drag-over','dragging'));
+    dragIndex = null;
+}
+
+// ========== SAVE & EXPORT ==========
+function collectData() {
+    return {
+        hero: {
+            tagZh: document.getElementById('hero-tag-zh')?.value || '',
+            tagEn: document.getElementById('hero-tag-en')?.value || '',
+            headingZh: document.getElementById('hero-heading-zh')?.value || '',
+            headingEn: document.getElementById('hero-heading-en')?.value || '',
+            quoteZh: document.getElementById('hero-quote-zh')?.value || '',
+            quoteEn: document.getElementById('hero-quote-en')?.value || '',
+            src: document.getElementById('hero-src')?.value || '',
+            location: document.getElementById('hero-location')?.value || '',
+            gear: document.getElementById('hero-gear')?.value || ''
+        },
+        about: {
+            introZh: document.getElementById('about-intro-zh')?.value || '',
+            introEn: document.getElementById('about-intro-en')?.value || '',
+            equip: document.getElementById('about-equip')?.value || '',
+            film: document.getElementById('about-film')?.value || '',
+            location: document.getElementById('about-location')?.value || '',
+            email: document.getElementById('about-email')?.value || '',
+            wechat: document.getElementById('about-wechat')?.value || '',
+            portrait: document.getElementById('about-portrait')?.value || '',
+            portraitLabel: document.getElementById('about-portrait-label')?.value || '',
+            douyin: document.getElementById('about-douyin')?.value || '',
+            xhs: document.getElementById('about-xhs')?.value || '',
+            weibo: document.getElementById('about-weibo')?.value || ''
+        },
+        guestbook: {
+            tagZh: document.getElementById('gb-tag-zh')?.value || '',
+            tagEn: document.getElementById('gb-tag-en')?.value || '',
+            headingZh: document.getElementById('gb-heading-zh')?.value || '',
+            headingEn: document.getElementById('gb-heading-en')?.value || ''
+        },
+        photos: photos
+    };
+}
+
+function scheduleSave() {
+    document.getElementById('saveLabel').textContent = '未保存';
+    document.querySelector('#saveIndicator .status-dot').classList.remove('saved');
+    document.querySelector('#saveIndicator .status-dot').classList.add('unsaved');
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+        const data = collectData();
+        localStorage.setItem('roy_zhao_admin_data', JSON.stringify(data));
+        document.getElementById('saveLabel').textContent = '已保存';
+        document.querySelector('#saveIndicator .status-dot').classList.add('saved');
+        document.querySelector('#saveIndicator .status-dot').classList.remove('unsaved');
+    }, 800);
+}
+
+function exportJSON() {
+    const data = collectData();
+    localStorage.setItem('roy_zhao_admin_data', JSON.stringify(data));
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'portfolio-data-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('JSON 已下载 ✅');
+    document.getElementById('saveLabel').textContent = '已保存';
+    document.querySelector('#saveIndicator .status-dot').classList.add('saved');
+}
+
+function resetAll() {
+    if (!confirm('确定要重置所有数据为默认值吗？此操作不可撤销。')) return;
+    localStorage.removeItem('roy_zhao_admin_data');
+    loadDefaults();
+    fillForms();
+    renderGalleryEditor();
+    showToast('已重置为默认值');
+}
+
+function importFromPage() {
+    const raw = localStorage.getItem('roy_zhao_admin_data');
+    if (!raw) { showToast('没有可导入的数据'); return; }
+    if (!confirm('从上次保存的数据恢复？')) return;
+    try {
+        const data = JSON.parse(raw);
+        photos = data.photos || DEFAULTS.photos;
+        heroData = data.hero || DEFAULTS.hero;
+        aboutData = data.about || DEFAULTS.about;
+        gbData = data.guestbook || DEFAULTS.guestbook;
+        fillForms();
+        renderGalleryEditor();
+        showToast('数据已导入 ✅');
+    } catch(e) { showToast('导入失败'); }
+}
+
+function showToast(msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastText').textContent = msg;
+    toast.classList.remove('translate-y-20','opacity-0');
+    toast.classList.add('translate-y-0','opacity-100');
+    setTimeout(() => {
+        toast.classList.add('translate-y-20','opacity-0');
+        toast.classList.remove('translate-y-0','opacity-100');
+    }, 2200);
+}
+
+// ========== EVENT LISTENERS ==========
+document.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    // Live preview binding
+    ['hero-tag-zh','hero-heading-zh','hero-quote-zh'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', updateHeroPreview);
+    });
+    ['about-intro-zh','about-equip','about-film','about-location'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', updateAboutPreview);
+    });
+    ['gb-tag-zh','gb-heading-zh'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', updateGbPreview);
+    });
+    // Auto-save on any input
+    document.addEventListener('input', (e) => {
+        if (e.target.closest('.input-field') || e.target.tagName === 'TEXTAREA') {
+            scheduleSave();
+        }
+    });
+});
+
+// ========== KEYBOARD SHORTCUTS ==========
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+        switch(e.key) {
+            case 's': e.preventDefault(); const d=collectData(); localStorage.setItem('roy_zhao_admin_data',JSON.stringify(d)); showToast('已保存 💾'); document.getElementById('saveLabel').textContent='已保存'; break;
+            case 'e': e.preventDefault(); exportJSON(); break;
+            case '1': e.preventDefault(); switchTab('hero'); break;
+            case '2': e.preventDefault(); switchTab('gallery'); break;
+            case '3': e.preventDefault(); switchTab('about'); break;
+            case '4': e.preventDefault(); switchTab('guestbook'); break;
+        }
+    }
+});
+
+console.log('📸 Roy Zhao 编辑后台 v2 已就绪');
+console.log('⌨️ 快捷键: Ctrl+S 保存 | Ctrl+E 导出 | Ctrl+1~4 切换标签');
+console.log('🖱️ 拖拽排序 | 复制 | 批量编辑 | 实时预览');
+</script>
+</body>
+</html>
