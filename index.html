@@ -932,7 +932,10 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i><span>获取天气中...</span>';
 
+            console.log('准备写入 Firestore:', { name: nameVal, message: messageVal, theme: selectedTheme, private: isPrivate, date: dateStr, time: timeStr });
+
             fetchWeatherInfo().then(weatherInfo => {
+                console.log('天气获取完成，写入数据库...');
                 return db.collection('guestbook').add({
                     name: nameVal,
                     message: messageVal,
