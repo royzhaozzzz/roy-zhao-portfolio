@@ -81,10 +81,11 @@
 
     <header class="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-white/10 px-6 py-4 md:px-12 md:py-6 vintage-transition">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-            <!-- Brand Logo -->
-            <a href="#" class="flex items-center group">
+            <!-- Brand Logo / Login -->
+            <button onclick="openLoginModal()" class="flex items-center group" id="loginBtn" title="点击登录">
                 <span class="text-3xl md:text-4xl font-light tracking-[0.05em] text-white group-hover:text-gray-300 transition-colors">zᶻ</span>
-            </a>
+                <span id="loginIndicator" class="hidden ml-3 text-[10px] text-white/50 tracking-wider"></span>
+            </button>
 
             <!-- Menu Navigation -->
             <nav class="flex items-center space-x-7 text-base tracking-[0.05em]">
@@ -157,7 +158,7 @@
                     <h4 class="text-lg font-light tracking-wider text-[#2c2a27] border-b border-[#e2dcd0] pb-3" data-i18n="guestbook.title">留下墨迹</h4>
 
                     <form id="guestbookForm" onsubmit="handleGuestbookSubmit(event)" class="space-y-4">
-                        <div>
+                        <div id="nameFieldWrapper">
                             <label class="block text-xs uppercase tracking-widest text-[#5c554a] mb-2" data-i18n="guestbook.name">称呼</label>
                             <input type="text" id="visitorName" required data-i18n-placeholder="guestbook.name_ph" placeholder="e.g. 拾光者"
                                 class="w-full px-4 py-2.5 bg-[#fafaf9] border border-[#d6cfc2] rounded-sm focus:outline-none focus:border-[#2c2a27] text-sm tracking-wide text-[#2c2a27] placeholder-[#a39b90] transition-colors">
@@ -205,7 +206,7 @@
                         <span class="text-xs uppercase tracking-[0.2em] text-[#5c554a]" data-i18n="guestbook.wall">银盐留迹</span>
                         <div class="flex items-center gap-3">
                             <button onclick="filterByName()" class="text-[10px] uppercase tracking-wider text-[#a39b90] hover:text-[#2c2a27] transition-colors">
-                                <i class="fa-regular fa-user mr-1"></i> <span id="nameFilterLabel">查看我的留言</span>
+                                🔍 <span id="nameFilterLabel">查找留言</span>
                             </button>
                             <button onclick="clearNameFilter()" id="clearNameFilterBtn" class="text-[10px] uppercase tracking-wider text-[#a39b90] hover:text-[#2c2a27] transition-colors hidden">
                                 <i class="fa-solid fa-xmark mr-1"></i> 清除筛选
@@ -323,6 +324,62 @@
             </div>
         </div>
     </section>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-[#737578] z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300" onclick="if(event.target===this)closeLoginModal()">
+        <button onclick="closeLoginModal()" class="absolute top-6 right-6 text-white/60 hover:text-white text-3xl font-light transition-colors z-50">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div class="text-center space-y-5 max-w-sm w-full mx-auto px-6">
+            <div>
+                <span class="text-3xl font-light text-white tracking-[0.05em]">zᶻ</span>
+                <p id="loginTitle" class="text-white/50 text-xs mt-3 tracking-wider">登录你的账号</p>
+            </div>
+            <div class="space-y-3">
+                <input type="text" id="loginNickname" placeholder="昵称" class="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-center text-lg placeholder-white/30 focus:outline-none focus:border-white/50 transition-colors">
+                <input type="password" id="loginPassword" placeholder="六位数字密码" maxlength="6" inputmode="numeric" pattern="[0-9]*" class="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-center text-lg placeholder-white/30 focus:outline-none focus:border-white/50 transition-colors tracking-[0.3em]">
+                <button id="loginSubmitBtn" onclick="doLogin()" class="w-full py-3 bg-white text-[#2c2a27] text-sm tracking-wider rounded-sm hover:bg-gray-200 transition-colors font-medium">
+                    登录
+                </button>
+            </div>
+            <p class="text-white/30 text-[10px]">
+                <span id="loginSwitchText">没有账号？</span>
+                <button id="loginSwitchBtn" onclick="toggleLoginMode()" class="text-white/60 hover:text-white underline underline-offset-2 transition-colors">注册</button>
+            </p>
+        </div>
+    </div>
+
+    <!-- Message Detail Modal -->
+    <div id="messageModal" class="fixed inset-0 bg-[#737578] z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300" onclick="if(event.target===this)closeMessageModal()">
+        <button onclick="closeMessageModal()" class="absolute top-6 right-6 text-white/60 hover:text-white text-3xl font-light transition-colors z-50">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div class="max-w-2xl w-full mx-auto px-6 max-h-[90vh] overflow-y-auto">
+            <!-- Main Message -->
+            <div id="modalMainCard" class="bg-white p-8 shadow-2xl rounded-sm border border-[#e2dcd0]">
+                <!-- Filled by JS -->
+            </div>
+            <!-- Replies -->
+            <div class="mt-6 space-y-3" id="modalReplies">
+                <!-- Filled by JS -->
+            </div>
+            <!-- Reply Form -->
+            <div class="mt-6 bg-white/10 backdrop-blur p-5 rounded-sm border border-white/10" id="modalReplyForm">
+                <h5 class="text-xs text-white/70 mb-3 tracking-wider uppercase">回复 Reply</h5>
+                <div class="flex gap-3">
+                    <input type="text" id="modalReplyName" placeholder="称呼" class="flex-1 px-3 py-2 bg-white/90 rounded-sm text-sm text-[#2c2a27] placeholder-[#a39b90] focus:outline-none">
+                    <button onclick="submitModalReply()" class="px-5 py-2 bg-white text-[#2c2a27] text-xs tracking-wider rounded-sm hover:bg-gray-200 transition">
+                        回复
+                    </button>
+                </div>
+                <textarea id="modalReplyMsg" placeholder="想说点什么..." rows="2" class="w-full mt-2 px-3 py-2 bg-white/90 rounded-sm text-sm text-[#2c2a27] placeholder-[#a39b90] focus:outline-none resize-none"></textarea>
+                <div class="mt-2 flex items-center gap-2">
+                    <input type="checkbox" id="modalReplyPublic" checked class="accent-[#2c2a27]">
+                    <label for="modalReplyPublic" class="text-xs text-white/60 cursor-pointer select-none">所有人可见</label>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="toastNotification" class="fixed bottom-6 right-6 bg-white text-[#2c2a27] px-6 py-4 rounded-sm shadow-2xl z-50 text-xs tracking-wider transform translate-y-20 opacity-0 transition-all duration-500 pointer-events-none flex items-center space-x-3 border border-[#8c8e91]/30">
         <i class="fa-solid fa-flask-bubble text-[#a39b90] text-base animate-bounce"></i>
@@ -697,6 +754,10 @@
         let currentActiveId = 1;
         let messages = [];
 
+        // Pagination & pin
+        const PAGE_SIZE = 6;
+        let currentPage = 1;
+
         // Name-based filter state
         let nameFilter = null; // null = show all public, string = show that name's all messages
 
@@ -718,6 +779,7 @@
                         weather: data.weather || '',
                         temp: data.temp,
                         private: data.private || false,
+                        pinned: data.pinned || false,
                         developing: isNew
                     });
                 });
@@ -734,33 +796,36 @@
             setInterval(loadMessagesFromDB, 5000);
         }
 
-        // Get filtered messages for display
+        // Get filtered messages for display (pinned first)
         function getFilteredMessages() {
+            let result;
             if (nameFilter) {
-                // Show all messages by this name (including private) + all public messages
-                const seen = new Set();
-                const result = [];
-                messages.forEach(m => {
-                    if (m.name === nameFilter) {
-                        result.push(m);
-                        seen.add(m.id);
-                    }
-                });
-                messages.forEach(m => {
-                    if (!seen.has(m.id) && !m.private) {
-                        result.push(m);
-                    }
-                });
-                return result;
+                // Searching for a specific user
+                if (currentUser && nameFilter === currentUser) {
+                    // Searching for self: show all own messages including private
+                    result = messages.filter(m => !m.private || m.name === currentUser);
+                } else {
+                    // Searching for someone else: only show their public messages
+                    result = messages.filter(m => m.name === nameFilter && !m.private);
+                }
+            } else if (currentUser) {
+                // Logged in, no filter: show public + own private
+                result = messages.filter(m => !m.private || m.name === currentUser);
+            } else {
+                // Not logged in: public only
+                result = messages.filter(m => !m.private);
             }
-            // Default: show only public messages
-            return messages.filter(m => !m.private);
+            // Sort: pinned first
+            const pinned = result.filter(m => m.pinned);
+            const unpinned = result.filter(m => !m.pinned);
+            return [...pinned, ...unpinned];
         }
 
         function filterByName() {
-            const name = prompt(currentLang === 'zh' ? '请问叫什么呀~ 👀' : 'What\'s your name? 👀');
+            const name = prompt(currentLang === 'zh' ? '叫什么名字呀~ 👀' : 'What\'s the name? 👀');
             if (!name || !name.trim()) return;
             nameFilter = name.trim();
+            currentPage = 1;
             document.getElementById('nameFilterLabel').textContent = nameFilter;
             document.getElementById('clearNameFilterBtn').classList.remove('hidden');
             renderMessages();
@@ -768,7 +833,8 @@
 
         function clearNameFilter() {
             nameFilter = null;
-            document.getElementById('nameFilterLabel').textContent = currentLang === 'zh' ? '查看我的留言' : 'View my messages';
+            currentPage = 1;
+            document.getElementById('nameFilterLabel').textContent = currentLang === 'zh' ? '查找留言' : 'Search messages';
             document.getElementById('clearNameFilterBtn').classList.add('hidden');
             renderMessages();
         }
@@ -909,7 +975,7 @@
             const messageInput = document.getElementById('visitorMessage');
 
             // Capture values BEFORE async weather call
-            const nameVal = nameInput.value.trim();
+            const nameVal = currentUser || nameInput.value.trim();
             const messageVal = messageInput.value.trim();
             const selectedTheme = document.querySelector('input[name="noteTheme"]:checked').value;
             const isPrivate = !document.getElementById('visitorPrivate').checked; // unchecked = private
@@ -953,16 +1019,143 @@
         }
 
         // Render Guestbook Cards (Contrast nicely on the gray wall)
+        // ========== User Login System ==========
+        let currentUser = null; // nickname string
+        let isLoginMode = true; // true=login, false=register
+
+        function openLoginModal() {
+            if (currentUser) {
+                if (confirm('当前登录为: ' + currentUser + '\n\n确定要退出登录吗？')) { logout(); }
+                return;
+            }
+            const modal = document.getElementById('loginModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            document.getElementById('loginNickname').focus();
+            resetLoginForm();
+        }
+
+        function closeLoginModal() {
+            const modal = document.getElementById('loginModal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        function resetLoginForm() {
+            document.getElementById('loginNickname').value = '';
+            document.getElementById('loginPassword').value = '';
+            isLoginMode = true;
+            document.getElementById('loginTitle').textContent = '登录你的账号';
+            document.getElementById('loginSubmitBtn').textContent = '登录';
+            document.getElementById('loginSwitchText').textContent = '没有账号？';
+            document.getElementById('loginSwitchBtn').textContent = '注册';
+        }
+
+        function toggleLoginMode() {
+            isLoginMode = !isLoginMode;
+            if (isLoginMode) {
+                document.getElementById('loginTitle').textContent = '登录你的账号';
+                document.getElementById('loginSubmitBtn').textContent = '登录';
+                document.getElementById('loginSwitchText').textContent = '没有账号？';
+                document.getElementById('loginSwitchBtn').textContent = '注册';
+            } else {
+                document.getElementById('loginTitle').textContent = '注册新账号';
+                document.getElementById('loginSubmitBtn').textContent = '注册';
+                document.getElementById('loginSwitchText').textContent = '已有账号？';
+                document.getElementById('loginSwitchBtn').textContent = '登录';
+            }
+        }
+
+        function doLogin() {
+            const nickname = document.getElementById('loginNickname').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            if (!nickname) { alert('请输入昵称'); return; }
+            if (nickname.length > 20) { alert('昵称太长了'); return; }
+            if (!password || password.length !== 6 || !/^\d{6}$/.test(password)) { alert('密码必须是六位数字'); return; }
+
+            const userRef = db.collection('users').doc(nickname);
+
+            if (isLoginMode) {
+                // Login: verify password
+                userRef.get().then(doc => {
+                    if (!doc.exists) { alert('账号不存在，请先注册'); return; }
+                    const data = doc.data();
+                    if (data.password !== password) { alert('密码错误'); return; }
+                    loginSuccess(nickname);
+                    userRef.update({ lastLogin: Date.now() }).catch(() => {});
+                }).catch(err => { alert('登录失败，请重试'); });
+            } else {
+                // Register: check if exists, then create
+                userRef.get().then(doc => {
+                    if (doc.exists) { alert('该昵称已被注册，换一个吧'); return; }
+                    return userRef.set({
+                        nickname: nickname,
+                        password: password,
+                        createdAt: Date.now(),
+                        lastLogin: Date.now()
+                    });
+                }).then(() => {
+                    loginSuccess(nickname);
+                }).catch(err => { alert('注册失败，请重试'); });
+            }
+        }
+
+        function loginSuccess(nickname) {
+            currentUser = nickname;
+            sessionStorage.setItem('roy_zhao_user', nickname);
+            closeLoginModal();
+            currentPage = 1;
+            updateLoginUI();
+            renderMessages();
+            showToast('你好，' + nickname + ' 👋');
+        }
+
+        function logout() {
+            currentUser = null;
+            currentPage = 1;
+            sessionStorage.removeItem('roy_zhao_user');
+            updateLoginUI();
+            renderMessages();
+            showToast('已退出登录');
+        }
+
+        function loadUser() {
+            const saved = sessionStorage.getItem('roy_zhao_user');
+            if (saved) { currentUser = saved; updateLoginUI(); }
+        }
+
+        function updateLoginUI() {
+            const indicator = document.getElementById('loginIndicator');
+            const nameInput = document.getElementById('visitorName');
+            if (currentUser) {
+                indicator.textContent = currentUser;
+                indicator.classList.remove('hidden');
+                if (nameInput) { nameInput.value = currentUser; nameInput.placeholder = currentUser; }
+            } else {
+                indicator.classList.add('hidden');
+                if (nameInput) { nameInput.value = ''; nameInput.placeholder = 'e.g. 拾光者'; }
+            }
+        }
+
         // Admin password (change this!)
-        const ADMIN_PASSWORD = 'royphoto2026';
+        const ADMIN_PASSWORD = 'Zrh20060727';
         let isAdminMode = false;
 
         function renderMessages() {
             const container = document.getElementById('messageBoard');
             container.innerHTML = '';
+            // Remove old pagination
+            const oldPag = container.parentElement.querySelector('.pagination-row');
+            if (oldPag) oldPag.remove();
             const displayMessages = isAdminMode ? messages : getFilteredMessages();
 
-            displayMessages.forEach(msg => {
+            // Pagination
+            const totalPages = Math.ceil(displayMessages.length / PAGE_SIZE) || 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const pageMessages = displayMessages.slice(start, start + PAGE_SIZE);
+
+            pageMessages.forEach(msg => {
                 const card = document.createElement('div');
 
                 let themeClasses = "bg-[#fffdf9] border-[#e2dcd0] text-[#2c2a27]";
@@ -995,20 +1188,18 @@
                 if (msg.city) weatherLine += ' · ' + msg.city;
                 if (msg.private) weatherLine += ' · 🔒';
 
-                card.className = `p-5 pb-8 shadow-xl rounded-sm border ${themeClasses} transform rotate-${(Math.abs(hashCode(msg.id)) % 3) - 1} hover:rotate-0 transition-transform duration-300 relative ${devStyleClass}`;
+                card.className = `p-5 pb-8 shadow-xl rounded-sm border ${themeClasses} hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 relative ${devStyleClass} cursor-pointer`;
 
                 card.innerHTML = `
                     ${indicatorMarkup}
-                    <div class="flex justify-between items-start border-b border-black/5 pb-3 mb-3 text-xs">
+                    <div class="flex justify-between items-start border-b border-black/5 pb-3 mb-3 text-xs" onclick="openMessageModal('${msg.id}')">
                         <span class="font-semibold tracking-wider flex items-center gap-1.5">
                             <i class="fa-solid fa-quote-left text-[10px] opacity-40"></i>
                             ${escapeHtml(msg.name)}
                         </span>
-                        <span class="font-mono text-[10px] ${headerIndicator} shrink-0 ml-2">${msg.date}</span>
+                        <span class="font-mono text-[10px] ${headerIndicator} shrink-0 ml-2">${msg.pinned ? '📌 ' : ''}${msg.date}</span>
                     </div>
-                    <p class="text-xs md:text-sm leading-relaxed tracking-wide font-light whitespace-pre-wrap min-h-[4rem]">
-                        ${escapeHtml(msg.message)}
-                    </p>
+                    <p class="text-xs md:text-sm leading-relaxed tracking-wide font-light whitespace-pre-wrap min-h-[4rem] text-left" onclick="openMessageModal('${msg.id}')">${escapeHtml(msg.message)}</p>
                     <div class="mt-4 pt-3 border-t border-black/5 flex justify-between items-end text-[9px] ${headerIndicator}">
                         <span class="tracking-wider">${msg.time || ''}</span>
                         <span class="tracking-wider text-right">${msg.weather ? msg.weather + ' ' : ''}${msg.temp != null ? msg.temp + '°C' : ''}${msg.city ? ' · ' + msg.city : ''}${msg.private ? ' 🔒' : ''}</span>
@@ -1016,6 +1207,33 @@
                 `;
                 container.appendChild(card);
             });
+
+            // Pagination controls
+            if (totalPages > 1) {
+                const pagDiv = document.createElement('div');
+                pagDiv.className = 'pagination-row col-span-full flex justify-center items-center gap-2 mt-6 pt-4 border-t border-[#e2dcd0]';
+                let pagHTML = '';
+                pagHTML += `<button onclick="goToPage(${currentPage-1})" ${currentPage<=1?'disabled':''} class="px-3 py-1 text-xs border rounded ${currentPage<=1?'text-gray-300 border-gray-200 cursor-not-allowed':'text-[#2c2a27] border-[#c5beb4] hover:bg-[#f5f4f0]'}">‹ 上一页</button>`;
+                for (let p = 1; p <= totalPages; p++) {
+                    if (p === currentPage) {
+                        pagHTML += `<span class="px-3 py-1 text-xs bg-[#2c2a27] text-white rounded">${p}</span>`;
+                    } else if (Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages) {
+                        pagHTML += `<button onclick="goToPage(${p})" class="px-3 py-1 text-xs border border-[#c5beb4] rounded hover:bg-[#f5f4f0] text-[#2c2a27]">${p}</button>`;
+                    } else if (Math.abs(p - currentPage) === 3) {
+                        pagHTML += '<span class="text-xs text-gray-400">...</span>';
+                    }
+                }
+                pagHTML += `<button onclick="goToPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''} class="px-3 py-1 text-xs border rounded ${currentPage>=totalPages?'text-gray-300 border-gray-200 cursor-not-allowed':'text-[#2c2a27] border-[#c5beb4] hover:bg-[#f5f4f0]'}">下一页 ›</button>`;
+                pagHTML += `<span class="text-[10px] text-gray-400 ml-3">${displayMessages.length} 条留言 · ${totalPages} 页</span>`;
+                pagDiv.innerHTML = pagHTML;
+                container.parentElement.appendChild(pagDiv);
+            }
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderMessages();
+            document.getElementById('messageBoard').scrollIntoView({ behavior: 'smooth' });
         }
 
         // Simple string hash for consistent rotation
@@ -1025,11 +1243,183 @@
             return Math.abs(hash);
         }
 
+        // ========== Message Modal & Reply System ==========
+        let currentModalMsgId = null;
+
+        function openMessageModal(msgId) {
+            currentModalMsgId = msgId;
+            const msg = messages.find(m => m.id === msgId);
+            if (!msg) return;
+
+            // Build main card
+            let themeClasses = 'bg-[#fffdf9] border-[#e2dcd0] text-[#2c2a27]';
+            if (msg.theme === 'vintage') themeClasses = 'bg-[#faf0dc] border-[#d8cbb5] text-[#3d3326]';
+            if (msg.theme === 'cyanotype') themeClasses = 'bg-[#e8edf2] border-[#c5d0db] text-[#1c2e42]';
+
+            let weatherLine = msg.date + ' ' + msg.time;
+            if (msg.weather) weatherLine += ' · ' + msg.weather;
+            if (msg.temp != null) weatherLine += ' ' + msg.temp + '°C';
+            if (msg.city) weatherLine += ' · ' + msg.city;
+
+            document.getElementById('modalMainCard').innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <span class="text-lg font-semibold tracking-wider">${escapeHtml(msg.name)}</span>
+                        ${msg.private ? '<span class="text-[10px] text-red-400 ml-2">🔒 仅我可见</span>' : ''}
+                        ${msg.pinned ? '<span class="text-[10px] text-amber-500 ml-2">📌 置顶</span>' : ''}
+                    </div>
+                    <span class="text-xs text-gray-400 font-mono">${weatherLine}</span>
+                </div>
+                <p class="text-sm md:text-base leading-relaxed whitespace-pre-wrap">${escapeHtml(msg.message)}</p>
+                <div class="mt-4 flex gap-3">
+                    ${isAdminMode ? `<button onclick="togglePin('${msg.id}')" class="text-xs text-amber-500 hover:text-amber-600 transition-colors">${msg.pinned ? '📌 取消置顶' : '📌 置顶'}</button>` : ''}
+                    ${currentUser && currentUser === msg.name ? `<button onclick="deleteOwnMessage('${msg.id}')" class="text-xs text-red-400 hover:text-red-600 transition-colors"><i class="fa-regular fa-trash-can mr-1"></i>删除</button>` : ''}
+                </div>
+            `;
+
+            // Clear reply form
+            document.getElementById('modalReplyName').value = '';
+            document.getElementById('modalReplyMsg').value = '';
+
+            // Load replies
+            loadReplies(msgId);
+
+            // Show modal
+            const modal = document.getElementById('messageModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function deleteOwnMessage(msgId) {
+            if (!currentUser) return;
+            const msg = messages.find(m => m.id === msgId);
+            if (!msg || msg.name !== currentUser) return;
+            if (!confirm('确定删除这条留言吗？')) return;
+            // Delete replies subcollection first, then the message
+            const repliesRef = db.collection('guestbook').doc(msgId).collection('replies');
+            deleteSubcollection(repliesRef).then(() => {
+                return db.collection('guestbook').doc(msgId).delete();
+            }).then(() => {
+                closeMessageModal();
+                showToast('留言已删除');
+            }).catch(err => { console.error('删除失败:', err); });
+        }
+
+        function deleteSubcollection(ref) {
+            return ref.get().then(snapshot => {
+                const batch = db.batch();
+                snapshot.forEach(doc => batch.delete(doc.ref));
+                return batch.commit();
+            });
+        }
+
+        function togglePin(msgId) {
+            const msg = messages.find(m => m.id === msgId);
+            if (!msg || !isAdminMode) return;
+            const newPinned = !msg.pinned;
+            db.collection('guestbook').doc(msgId).update({ pinned: newPinned }).then(() => {
+                msg.pinned = newPinned;
+                closeMessageModal();
+                showToast(newPinned ? '已置顶 📌' : '已取消置顶');
+                renderMessages();
+            }).catch(err => { console.error('置顶失败:', err); });
+        }
+
+        function closeMessageModal() {
+            const modal = document.getElementById('messageModal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+            document.body.style.overflow = '';
+            currentModalMsgId = null;
+        }
+
+        function loadReplies(msgId) {
+            const container = document.getElementById('modalReplies');
+            container.innerHTML = '<div class="text-center text-white/40 text-xs py-2"><i class="fa-solid fa-spinner animate-spin mr-1"></i> 加载回复...</div>';
+
+            db.collection('guestbook').doc(msgId).collection('replies').orderBy('createdAt', 'asc').get().then(snapshot => {
+                if (snapshot.empty) {
+                    container.innerHTML = '<div class="text-center text-white/30 text-xs py-4">暂无回复，来说点什么吧</div>';
+                    return;
+                }
+                container.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    // 彼此可见: reply author, original poster, or admin
+                    if (d.private && !isAdminMode) {
+                        const viewerName = nameFilter; // set by 查看我的留言
+                        const isReplyAuthor = viewerName && viewerName === d.name;
+                        const isOriginalPoster = viewerName && viewerName === d.replyTo;
+                        if (!isReplyAuthor && !isOriginalPoster) return;
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = 'bg-white/10 backdrop-blur p-4 rounded-sm border border-white/10 text-white';
+                    div.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-sm font-semibold">${escapeHtml(d.name || '')}${d.private ? ' <span class="text-[10px] text-white/40">🔒 彼此</span>' : ''}</span>
+                            <span class="text-[10px] text-white/50 font-mono">${d.date || ''} ${d.time || ''}</span>
+                        </div>
+                        <p class="text-sm leading-relaxed whitespace-pre-wrap text-white/80">${escapeHtml(d.message || '')}</p>
+                    `;
+                    container.appendChild(div);
+                });
+            }).catch(err => {
+                container.innerHTML = '<div class="text-center text-white/30 text-xs py-4">加载失败</div>';
+            });
+        }
+
+        function submitModalReply() {
+            if (!currentModalMsgId) return;
+            const nameEl = document.getElementById('modalReplyName');
+            const msgEl = document.getElementById('modalReplyMsg');
+            const nameVal = nameEl.value.trim();
+            const msgVal = msgEl.value.trim();
+            if (!nameVal || !msgVal) return;
+
+            const replyPublic = document.getElementById('modalReplyPublic').checked;
+            const today = new Date();
+            const dateStr = today.getFullYear() + '.' + String(today.getMonth() + 1).padStart(2, '0') + '.' + String(today.getDate()).padStart(2, '0');
+            const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
+
+            // Get original poster name for 彼此可见
+            const parentMsg = messages.find(m => m.id === currentModalMsgId);
+            const replyToName = parentMsg ? parentMsg.name : '';
+
+            db.collection('guestbook').doc(currentModalMsgId).collection('replies').add({
+                name: nameVal,
+                message: msgVal,
+                date: dateStr,
+                time: timeStr,
+                private: !replyPublic,
+                replyTo: replyToName,
+                createdAt: Date.now()
+            }).then(() => {
+                nameEl.value = '';
+                msgEl.value = '';
+                document.getElementById('modalReplyPublic').checked = true;
+                loadReplies(currentModalMsgId);
+            }).catch(err => {
+                console.error('回复失败:', err);
+            });
+        }
+
+        // Keyboard: ESC to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('messageModal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeMessageModal();
+                }
+            }
+        });
+
         // Admin toggle
         function toggleAdmin() {
-            if (isAdminMode) { isAdminMode = false; renderMessages(); return; }
+            if (isAdminMode) { isAdminMode = false; currentPage = 1; renderMessages(); return; }
             const pw = prompt('输入神奇小密码！🔮');
-            if (pw === ADMIN_PASSWORD) { isAdminMode = true; renderMessages(); showToast('管理模式已开启，显示所有留言'); }
+            if (pw === ADMIN_PASSWORD) { isAdminMode = true; currentPage = 1; renderMessages(); showToast('管理模式已开启，显示所有留言'); }
             else if (pw) { alert('密码错误'); }
         }
 
@@ -1106,6 +1496,7 @@
         // On Load Execution
         window.onload = function () {
             loadLang();
+            loadUser();
             renderGallery('all');
             initGuestbook();
         };
