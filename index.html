@@ -187,6 +187,12 @@
                                 class="w-full px-4 py-2.5 bg-[#fafaf9] border border-[#d6cfc2] rounded-sm focus:outline-none focus:border-[#2c2a27] text-sm tracking-wide text-[#2c2a27] placeholder-[#a39b90] transition-colors resize-none"></textarea>
                         </div>
 
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="visitorPrivate" class="accent-[#2c2a27]">
+                            <label for="visitorPrivate" class="text-xs text-[#8c8273] cursor-pointer select-none">仅我可见</label>
+                            <span class="text-[10px] text-[#a39b90]">（勾选后仅站长可见）</span>
+                        </div>
+
                         <button type="submit" class="w-full py-3 bg-[#2c2a27] text-white text-xs uppercase tracking-[0.2em] hover:bg-[#5c554a] transition-colors rounded-sm flex items-center justify-center space-x-2 font-medium shadow-md">
                             <i class="fa-solid fa-flask"></i>
                             <span data-i18n="guestbook.submit">放入显影池</span>
@@ -198,9 +204,17 @@
                 <div class="lg:col-span-8 space-y-4">
                     <div class="flex justify-between items-center border-b border-[#e2dcd0] pb-3">
                         <span class="text-xs uppercase tracking-[0.2em] text-[#5c554a]" data-i18n="guestbook.wall">银盐留迹</span>
-                        <button onclick="clearMessages()" class="text-[10px] uppercase tracking-wider text-[#a39b90] hover:text-[#2c2a27] transition-colors">
-                            <i class="fa-regular fa-trash-can mr-1"></i> <span data-i18n="guestbook.clear">清空留言</span>
-                        </button>
+                        <div class="flex items-center gap-3">
+                            <button onclick="filterByName()" class="text-[10px] uppercase tracking-wider text-[#a39b90] hover:text-[#2c2a27] transition-colors">
+                                <i class="fa-regular fa-user mr-1"></i> <span id="nameFilterLabel">查看我的留言</span>
+                            </button>
+                            <button onclick="clearNameFilter()" id="clearNameFilterBtn" class="text-[10px] uppercase tracking-wider text-[#a39b90] hover:text-[#2c2a27] transition-colors hidden">
+                                <i class="fa-solid fa-xmark mr-1"></i> 清除筛选
+                            </button>
+                            <button onclick="toggleAdmin()" class="text-[10px] uppercase tracking-wider text-[#a39b90] hover:text-[#2c2a27] transition-colors">
+                                <i class="fa-solid fa-lock mr-1"></i> <span id="adminBtnLabel">ROYZHAO</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Polaroid Grid -->
@@ -684,13 +698,15 @@
         let currentActiveId = 1;
         let messages = [];
 
+        // Name-based filter state
+        let nameFilter = null; // null = show all public, string = show that name's all messages
+
         // Initialize and load guestbook (Firestore real-time listener)
         function initGuestbook() {
             db.collection('guestbook').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
                 messages = [];
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    // Show developing animation for messages less than 4 seconds old
                     const isNew = (Date.now() - data.createdAt) < 4000;
                     messages.push({
                         id: doc.id,
@@ -698,16 +714,59 @@
                         message: data.message,
                         theme: data.theme,
                         date: data.date,
+                        time: data.time || '',
+                        city: data.city || '',
+                        weather: data.weather || '',
+                        temp: data.temp,
+                        private: data.private || false,
                         developing: isNew
                     });
                 });
                 renderMessages();
             }, error => {
                 console.warn('Firestore listener error:', error);
-                // Fallback to empty
                 messages = [];
                 renderMessages();
             });
+        }
+
+        // Get filtered messages for display
+        function getFilteredMessages() {
+            if (nameFilter) {
+                // Show all messages by this name (including private) + all public messages
+                const seen = new Set();
+                const result = [];
+                messages.forEach(m => {
+                    if (m.name === nameFilter) {
+                        result.push(m);
+                        seen.add(m.id);
+                    }
+                });
+                messages.forEach(m => {
+                    if (!seen.has(m.id) && !m.private) {
+                        result.push(m);
+                    }
+                });
+                return result;
+            }
+            // Default: show only public messages
+            return messages.filter(m => !m.private);
+        }
+
+        function filterByName() {
+            const name = prompt(currentLang === 'zh' ? '请问叫什么呀~ 👀' : 'What\'s your name? 👀');
+            if (!name || !name.trim()) return;
+            nameFilter = name.trim();
+            document.getElementById('nameFilterLabel').textContent = nameFilter;
+            document.getElementById('clearNameFilterBtn').classList.remove('hidden');
+            renderMessages();
+        }
+
+        function clearNameFilter() {
+            nameFilter = null;
+            document.getElementById('nameFilterLabel').textContent = currentLang === 'zh' ? '查看我的留言' : 'View my messages';
+            document.getElementById('clearNameFilterBtn').classList.add('hidden');
+            renderMessages();
         }
 
         // Render Portfolio Grid
@@ -816,44 +875,90 @@
         }
 
         // Guestbook Submit and Polaroid Chemical Developing Simulation
+        // Fetch weather info for the message
+        async function fetchWeatherInfo() {
+            try {
+                const ipRes = await fetch('https://ipapi.co/json/');
+                const ipData = await ipRes.json();
+                const city = ipData.city || ipData.region || '';
+                const lat = ipData.latitude;
+                const lon = ipData.longitude;
+                if (!lat || !lon) return { city, weather: '', temp: null };
+
+                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+                const weatherData = await weatherRes.json();
+                const code = weatherData.current_weather?.weathercode;
+                const temp = weatherData.current_weather?.temperature;
+                // Map WMO weather codes to emoji
+                const weatherMap = { 0:'☀️', 1:'🌤️', 2:'⛅', 3:'☁️', 45:'🌫️', 48:'🌫️', 51:'🌦️', 53:'🌧️', 55:'🌧️', 61:'🌧️', 63:'🌧️', 65:'🌧️', 71:'🌨️', 73:'🌨️', 75:'🌨️', 77:'🌨️', 80:'🌦️', 81:'🌧️', 82:'🌧️', 85:'🌨️', 86:'🌨️', 95:'⛈️', 96:'⛈️', 99:'⛈️' };
+                const weather = weatherMap[code] || '';
+                return { city, weather, temp };
+            } catch (e) {
+                return { city: '', weather: '', temp: null };
+            }
+        }
+
         function handleGuestbookSubmit(event) {
             event.preventDefault();
 
             const nameInput = document.getElementById('visitorName');
             const messageInput = document.getElementById('visitorMessage');
             const selectedTheme = document.querySelector('input[name="noteTheme"]:checked').value;
+            const isPrivate = document.getElementById('visitorPrivate').checked;
 
             const today = new Date();
             const dateStr = today.getFullYear() + '.' + String(today.getMonth() + 1).padStart(2, '0') + '.' + String(today.getDate()).padStart(2, '0');
+            const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
 
-            db.collection('guestbook').add({
-                name: nameInput.value.trim(),
-                message: messageInput.value.trim(),
-                theme: selectedTheme,
-                date: dateStr,
-                createdAt: Date.now()
+            // Disable button while submitting
+            const submitBtn = document.querySelector('#guestbookForm button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i><span>获取天气中...</span>';
+
+            fetchWeatherInfo().then(weatherInfo => {
+                return db.collection('guestbook').add({
+                    name: nameInput.value.trim(),
+                    message: messageInput.value.trim(),
+                    theme: selectedTheme,
+                    private: isPrivate,
+                    date: dateStr,
+                    time: timeStr,
+                    city: weatherInfo.city || '',
+                    weather: weatherInfo.weather || '',
+                    temp: weatherInfo.temp,
+                    createdAt: Date.now()
+                });
             }).then(() => {
                 showToast(t('toast.sent'));
             }).catch(err => {
                 console.error('留言失败:', err);
                 showToast(currentLang === 'zh' ? '留言失败，请重试' : 'Failed to submit, please retry');
+            }).finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fa-solid fa-flask"></i><span data-i18n="guestbook.submit">放入显影池</span>';
             });
 
             nameInput.value = '';
             messageInput.value = '';
+            document.getElementById('visitorPrivate').checked = false;
         }
 
         // Render Guestbook Cards (Contrast nicely on the gray wall)
+        // Admin password (change this!)
+        const ADMIN_PASSWORD = 'royphoto2026';
+        let isAdminMode = false;
+
         function renderMessages() {
             const container = document.getElementById('messageBoard');
             container.innerHTML = '';
+            const displayMessages = isAdminMode ? messages : getFilteredMessages();
 
-            messages.forEach(msg => {
+            displayMessages.forEach(msg => {
                 const card = document.createElement('div');
-                
+
                 let themeClasses = "bg-[#fffdf9] border-[#e2dcd0] text-[#2c2a27]";
                 let headerIndicator = "text-[#8c8273]";
-                
+
                 if (msg.theme === 'vintage') {
                     themeClasses = "bg-[#faf0dc] border-[#d8cbb5] text-[#3d3326]";
                     headerIndicator = "text-[#a38b6c]";
@@ -874,27 +979,49 @@
                     `;
                 }
 
-                card.className = `p-5 pb-8 shadow-xl rounded-sm border ${themeClasses} transform rotate-${(msg.id % 3) - 1} hover:rotate-0 transition-transform duration-300 relative ${devStyleClass}`;
-                
+                // Weather + time footer
+                let weatherLine = msg.date + ' ' + msg.time;
+                if (msg.weather) weatherLine += ' · ' + msg.weather;
+                if (msg.temp != null) weatherLine += ' ' + msg.temp + '°C';
+                if (msg.city) weatherLine += ' · ' + msg.city;
+                if (msg.private) weatherLine += ' · 🔒';
+
+                card.className = `p-5 pb-8 shadow-xl rounded-sm border ${themeClasses} transform rotate-${(Math.abs(hashCode(msg.id)) % 3) - 1} hover:rotate-0 transition-transform duration-300 relative ${devStyleClass}`;
+
                 card.innerHTML = `
                     ${indicatorMarkup}
-                    <div class="flex justify-between items-center border-b border-black/5 pb-3 mb-3 text-xs">
+                    <div class="flex justify-between items-start border-b border-black/5 pb-3 mb-3 text-xs">
                         <span class="font-semibold tracking-wider flex items-center gap-1.5">
                             <i class="fa-solid fa-quote-left text-[10px] opacity-40"></i>
-                            ${msg.name}
+                            ${escapeHtml(msg.name)}
                         </span>
-                        <span class="font-mono text-[10px] ${headerIndicator}">${msg.date}</span>
+                        <span class="font-mono text-[10px] ${headerIndicator} shrink-0 ml-2">${msg.date}</span>
                     </div>
                     <p class="text-xs md:text-sm leading-relaxed tracking-wide font-light whitespace-pre-wrap min-h-[4rem]">
-                        ${msg.message}
+                        ${escapeHtml(msg.message)}
                     </p>
-                    <div class="mt-4 pt-3 border-t border-black/5 flex justify-between items-center text-[9px] font-mono uppercase tracking-[0.2em] ${headerIndicator}">
-                        <span>#${msg.theme} Process</span>
-                        <span>Silver Salt Print</span>
+                    <div class="mt-4 pt-3 border-t border-black/5 flex justify-between items-end text-[9px] ${headerIndicator}">
+                        <span class="tracking-wider">${msg.time || ''}</span>
+                        <span class="tracking-wider text-right">${msg.weather ? msg.weather + ' ' : ''}${msg.temp != null ? msg.temp + '°C' : ''}${msg.city ? ' · ' + msg.city : ''}${msg.private ? ' 🔒' : ''}</span>
                     </div>
                 `;
                 container.appendChild(card);
             });
+        }
+
+        // Simple string hash for consistent rotation
+        function hashCode(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; }
+            return Math.abs(hash);
+        }
+
+        // Admin toggle
+        function toggleAdmin() {
+            if (isAdminMode) { isAdminMode = false; renderMessages(); return; }
+            const pw = prompt('输入神奇小密码！🔮');
+            if (pw === ADMIN_PASSWORD) { isAdminMode = true; renderMessages(); showToast('管理模式已开启，显示所有留言'); }
+            else if (pw) { alert('密码错误'); }
         }
 
         // Clear messages from Firestore
@@ -912,6 +1039,9 @@
                 console.error('清空失败:', err);
             });
         }
+
+        // Simple HTML escape
+        function escapeHtml(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
         // Custom Toast Notification
         function showToast(text) {

@@ -6,6 +6,9 @@
     <title>编辑后台 — Roy Zhao Portfolio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <style>
         :root { --bg: #f5f4f0; --panel: #fff; --accent: #2c2a27; --border: #e2dcd0; --muted: #8c8273; }
         body { font-family: -apple-system, 'Segoe UI', system-ui, sans-serif; background: #e8e6e1; }
@@ -76,6 +79,9 @@
         </button>
         <button class="tab-btn px-4 py-2.5 text-sm tracking-wide rounded-t-lg whitespace-nowrap" data-tab="guestbook" onclick="switchTab('guestbook')">
             <i class="fa-solid fa-book mr-1.5"></i> 留影簿
+        </button>
+        <button class="tab-btn px-4 py-2.5 text-sm tracking-wide rounded-t-lg whitespace-nowrap" data-tab="messages" onclick="switchTab('messages')">
+            <i class="fa-solid fa-envelope mr-1.5"></i> 留言管理
         </button>
     </nav>
 
@@ -223,6 +229,24 @@
         </div>
     </main>
 
+        <!-- ===== MESSAGES TAB ===== -->
+        <div id="tab-messages" class="tab-content" style="display:none">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-medium text-sm tracking-wide flex items-center gap-2">
+                    <i class="fa-solid fa-envelope text-gray-400"></i> 留言管理
+                    <span class="text-xs text-gray-400" id="msgCount">0 条</span>
+                </h3>
+                <div class="flex gap-2">
+                    <button onclick="loadMessages()" class="btn btn-outline btn-sm"><i class="fa-solid fa-rotate"></i> 刷新</button>
+                    <button onclick="deleteAllMessages()" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i> 清空全部</button>
+                </div>
+            </div>
+            <div id="messagesList" class="space-y-3">
+                <div class="text-center text-gray-400 py-8">点击「刷新」加载留言...</div>
+            </div>
+        </div>
+    </main>
+
     <!-- ========== TOAST ========== -->
     <div id="toast" class="fixed bottom-6 right-6 bg-[#2c2a27] text-white px-5 py-3 rounded-lg shadow-xl z-50 text-sm transition-all duration-300 translate-y-20 opacity-0 pointer-events-none flex items-center gap-2">
         <i class="fa-solid fa-circle-check text-green-400 text-xs"></i>
@@ -230,6 +254,18 @@
     </div>
 
 <script>
+// ========== Firebase Init ==========
+const firebaseConfig = {
+    apiKey: "AIzaSyDIsAUYNICA3CPFPF-vjaH1_uhZF-kEClo",
+    authDomain: "my-site-6ad7d.firebaseapp.com",
+    projectId: "my-site-6ad7d",
+    storageBucket: "my-site-6ad7d.firebasestorage.app",
+    messagingSenderId: "417035962967",
+    appId: "1:417035962967:web:9d3fd07e6baf52c0787112"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 // ========== DATA STORE ==========
 let photos = [];
 let heroData = {};
@@ -633,13 +669,81 @@ document.addEventListener('keydown', (e) => {
             case '2': e.preventDefault(); switchTab('gallery'); break;
             case '3': e.preventDefault(); switchTab('about'); break;
             case '4': e.preventDefault(); switchTab('guestbook'); break;
+            case '5': e.preventDefault(); switchTab('messages'); loadMessages(); break;
         }
     }
 });
 
+// ========== MESSAGE MANAGEMENT ==========
+function loadMessages() {
+    const container = document.getElementById('messagesList');
+    container.innerHTML = '<div class="text-center text-gray-400 py-4"><i class="fa-solid fa-spinner animate-spin"></i> 加载中...</div>';
+
+    db.collection('guestbook').orderBy('createdAt', 'desc').limit(100).get().then(snapshot => {
+        document.getElementById('msgCount').textContent = snapshot.size + ' 条';
+        if (snapshot.empty) {
+            container.innerHTML = '<div class="text-center text-gray-400 py-8">暂无留言</div>';
+            return;
+        }
+        container.innerHTML = '';
+        snapshot.forEach(doc => {
+            const d = doc.data();
+            const date = new Date(d.createdAt);
+            const timeStr = date.toLocaleString('zh-CN', { hour12: false });
+            const row = document.createElement('div');
+            row.className = 'card p-3 flex items-start gap-3 text-sm';
+            row.innerHTML = `
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-medium">${escapeHtml(d.name)}</span>
+                        ${d.private ? '<span class="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded">仅我可见</span>' : '<span class="text-[10px] bg-green-100 text-green-600 px-1.5 py-0.5 rounded">公开</span>'}
+                        <span class="text-[10px] text-gray-400">${timeStr}</span>
+                        ${d.city ? `<span class="text-[10px] text-gray-400">· ${d.city}</span>` : ''}
+                        ${d.weather ? `<span class="text-[10px]">${d.weather} ${d.temp!=null?d.temp+'°C':''}</span>` : ''}
+                    </div>
+                    <p class="text-gray-600 text-xs whitespace-pre-wrap">${escapeHtml(d.message)}</p>
+                </div>
+                <button onclick="deleteMessage('${doc.id}')" class="p-1.5 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 rounded flex-shrink-0" title="删除">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(row);
+        });
+    }).catch(err => {
+        container.innerHTML = '<div class="text-center text-red-400 py-4">加载失败: ' + err.message + '</div>';
+    });
+}
+
+function deleteMessage(docId) {
+    if (!confirm('删除这条留言？')) return;
+    db.collection('guestbook').doc(docId).delete().then(() => {
+        showToast('已删除');
+        loadMessages();
+    }).catch(err => { showToast('删除失败'); });
+}
+
+function deleteAllMessages() {
+    if (!confirm('确定要清空所有留言吗？此操作不可撤销！')) return;
+    const batch = db.batch();
+    db.collection('guestbook').get().then(snapshot => {
+        if (snapshot.empty) { showToast('没有可删除的留言'); return; }
+        snapshot.forEach(doc => batch.delete(doc.ref));
+        return batch.commit();
+    }).then(() => { showToast('已全部清空'); loadMessages(); })
+    .catch(err => { showToast('清空失败'); });
+}
+
+// Auto-load messages when switching to messages tab
+const origSwitchTab = switchTab;
+switchTab = function(name) {
+    origSwitchTab(name);
+    if (name === 'messages') loadMessages();
+};
+
 console.log('📸 Roy Zhao 编辑后台 v2 已就绪');
 console.log('⌨️ 快捷键: Ctrl+S 保存 | Ctrl+E 导出 | Ctrl+1~4 切换标签');
 console.log('🖱️ 拖拽排序 | 复制 | 批量编辑 | 实时预览');
+console.log('📩 留言管理: 切换到「留言管理」标签查看/删除留言');
 </script>
 </body>
 </html>
