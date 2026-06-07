@@ -471,6 +471,12 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        // Route through Cloudflare Worker for domestic access
+        db.settings({
+            host: 'firestore-proxy.royzhao.workers.dev',
+            ssl: true,
+            experimentalForceLongPolling: true
+        });
 
         // ========== i18n Language System ==========
         let currentLang = 'zh';
@@ -496,7 +502,7 @@
             'guestbook.sepia':   { zh: '焦糖',           en: 'Sepia' },
             'guestbook.blue':    { zh: '蓝晒',           en: 'Cyan' },
             'guestbook.msg':     { zh: '留言',           en: 'Message' },
-            'guestbook.msg_ph':  { zh: '光影流转，写下你想说的话...', en: 'Write something...' },
+            'guestbook.msg_ph':  { zh: '写点东西吧！...', en: 'Write something...' },
             'guestbook.submit':  { zh: '放入显影池',     en: 'Develop Note' },
             'guestbook.wall':    { zh: '银盐留迹',       en: 'Wall of Shadows' },
             'guestbook.clear':   { zh: '清空留言',       en: 'Clear Messages' },
