@@ -203,7 +203,7 @@
                 <!-- Right Column: Polaroid Message Wall -->
                 <div class="lg:col-span-8 space-y-4">
                     <div class="flex justify-between items-center border-b border-[#e2dcd0] pb-3">
-                        <span class="text-xs uppercase tracking-[0.2em] text-[#5c554a]" data-i18n="guestbook.wall">银盐留迹</span>
+                        <span class="text-xs uppercase tracking-[0.2em] text-[#5c554a]" data-i18n="guestbook.wall">note</span>
                         <div class="flex items-center gap-3">
                             <button onclick="filterByName()" class="text-[10px] uppercase tracking-wider text-[#a39b90] hover:text-[#2c2a27] transition-colors">
                                 🔍 <span id="nameFilterLabel">查找留言</span>
@@ -254,7 +254,7 @@
             
             <div class="space-y-4 text-[#3d3326] text-sm md:text-base leading-relaxed tracking-wider font-light">
                 <p data-i18n="about.intro">
-                    你好，我是<span class="text-[#2c2a27] font-semibold">赵润涵</span>。
+                    大家好，我是<span class="text-[#2c2a27] font-semibold">赵润涵</span>。
                 </p>
             </div>
 
@@ -282,6 +282,10 @@
                         <i class="fa-regular fa-envelope"></i>
                         <span>roy_zrh@foxmail.com</span>
                     </a>
+                    <div class="flex items-center justify-center space-x-2 px-5 py-3 border border-[#c5beb4] rounded-sm w-full sm:w-auto text-[#2c2a27] text-xs tracking-widest">
+                        <i class="fa-solid fa-graduation-cap text-[#8c8273]"></i>
+                        <span>深圳大学</span>
+                    </div>
                     <a href="#" class="flex items-center justify-center space-x-2 px-5 py-3 border border-[#c5beb4] hover:border-[#2c2a27] hover:bg-[#f5f4f0] text-xs tracking-widest transition-all rounded-sm w-full sm:w-auto text-[#2c2a27]">
                         <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
                             <path d="M8.69 3.46C3.9 3.46 0 6.57 0 10.39c0 2.1 1.1 3.99 2.81 5.25l-.7 2.11 2.42-1.21c.84.24 1.75.37 2.69.37.32 0 .63-.02.94-.05-.14-.52-.22-1.06-.22-1.62 0-3.2 3.03-5.8 6.77-5.8.25 0 .5.01.74.03C14.74 6.19 11.93 3.46 8.69 3.46zm-2.9 4.17c.4 0 .73.31.73.69 0 .39-.33.7-.73.7-.41 0-.73-.31-.73-.7 0-.38.32-.69.73-.69zm5.1 0c.4 0 .73.31.73.69 0 .39-.33.7-.73.7-.41 0-.73-.31-.73-.7 0-.38.32-.69.73-.69z"/>
@@ -501,11 +505,11 @@
             'guestbook.msg':     { zh: '留言',           en: 'Message' },
             'guestbook.msg_ph':  { zh: '写点东西吧！...', en: 'Write something...' },
             'guestbook.submit':  { zh: '放入显影池',     en: 'Develop Note' },
-            'guestbook.wall':    { zh: '银盐留迹',       en: 'Wall of Shadows' },
+            'guestbook.wall':    { zh: 'note',       en: 'Wall of Shadows' },
             'guestbook.clear':   { zh: '清空留言',       en: 'Clear Messages' },
             'card.view':         { zh: '浏览',           en: 'View' },
             'about.heading':     { zh: '关于我',         en: 'About' },
-            'about.intro':       { zh: '你好，我是<span class="text-[#2c2a27] font-semibold">赵润涵</span>。', en: 'Hi, I\'m <span class="text-[#2c2a27] font-semibold">Roy Zhao</span>.' },
+            'about.intro':       { zh: '大家好，我是<span class="text-[#2c2a27] font-semibold">赵润涵</span>。', en: 'Hi, I\'m <span class="text-[#2c2a27] font-semibold">Roy Zhao</span>.' },
             'about.equip':       { zh: '设备',           en: 'Equipment' },
             'about.film':        { zh: '底片',           en: 'Preferred Stock' },
             'about.location':    { zh: '地区',           en: 'Location' },
@@ -796,6 +800,8 @@
                         temp: data.temp,
                         private: data.private || false,
                         pinned: data.pinned || false,
+                        likes: data.likes || 0,
+                        replyCount: data.replyCount || 0,
                         developing: isNew
                     });
                 });
@@ -808,8 +814,23 @@
 
         // Init: load once, then poll every 5 seconds
         function initGuestbook() {
-            loadMessagesFromDB();
+            loadMessagesFromDB().then(() => syncAllReplyCounts());
             setInterval(loadMessagesFromDB, 5000);
+        }
+
+        // One-time sync: count replies for all messages
+        function syncAllReplyCounts() {
+            messages.forEach(msg => {
+                db.collection('guestbook').doc(msg.id).collection('replies').get().then(snap => {
+                    const count = snap.size;
+                    if (msg.replyCount !== count) {
+                        msg.replyCount = count;
+                        db.collection('guestbook').doc(msg.id).update({ replyCount: count }).catch(() => {});
+                    }
+                }).catch(() => {});
+            });
+            // Re-render after all counts come back (roughly)
+            setTimeout(() => renderMessages(), 2000);
         }
 
         // Get filtered messages for display (pinned first)
@@ -1236,7 +1257,15 @@
                     </div>
                     <p class="text-xs md:text-sm leading-relaxed tracking-wide font-light whitespace-pre-wrap min-h-[4rem] text-left" onclick="openMessageModal('${msg.id}')">${escapeHtml(msg.message)}</p>
                     <div class="mt-4 pt-3 border-t border-black/5 flex justify-between items-end text-[9px] ${headerIndicator}">
-                        <span class="tracking-wider">${msg.time || ''}</span>
+                        <span class="tracking-wider flex items-center gap-3">
+                            <span>${msg.time || ''}</span>
+                            <button onclick="event.stopPropagation(); toggleLike('${msg.id}')" class="hover:text-red-400 transition-colors ${isLiked('${msg.id}') ? 'text-red-400' : ''}">
+                                <i class="${isLiked('${msg.id}') ? 'fa-solid' : 'fa-regular'} fa-heart mr-0.5"></i>${msg.likes || 0}
+                            </button>
+                            <span onclick="event.stopPropagation(); openMessageModal('${msg.id}')" class="cursor-pointer hover:text-[#2c2a27] transition-colors">
+                                <i class="fa-regular fa-comment-dots mr-0.5"></i>${msg.replyCount || 0}
+                            </span>
+                        </span>
                         <span class="tracking-wider text-right">${msg.weather ? msg.weather + ' ' : ''}${msg.temp != null ? msg.temp + '°C' : ''}${msg.city ? ' · ' + msg.city : ''}${msg.private ? ' 🔒' : ''}</span>
                     </div>
                 `;
@@ -1263,6 +1292,31 @@
                 pagDiv.innerHTML = pagHTML;
                 container.parentElement.appendChild(pagDiv);
             }
+        }
+
+        // Like tracking (localStorage to prevent double-liking)
+        function getLikedMessages() {
+            try { return JSON.parse(localStorage.getItem('roy_zhao_liked') || '[]'); }
+            catch(e) { return []; }
+        }
+        function isLiked(msgId) { return getLikedMessages().includes(msgId); }
+
+        function toggleLike(msgId) {
+            const liked = getLikedMessages();
+            if (liked.includes(msgId)) return; // Already liked
+
+            const msgRef = db.collection('guestbook').doc(msgId);
+            msgRef.get().then(doc => {
+                const current = (doc.exists && doc.data().likes) || 0;
+                return msgRef.update({ likes: current + 1 });
+            }).then(() => {
+                liked.push(msgId);
+                localStorage.setItem('roy_zhao_liked', JSON.stringify(liked));
+                // Update local message
+                const msg = messages.find(m => m.id === msgId);
+                if (msg) msg.likes = (msg.likes || 0) + 1;
+                renderMessages();
+            }).catch(err => console.error('点赞失败:', err));
         }
 
         function goToPage(page) {
@@ -1374,6 +1428,13 @@
             container.innerHTML = '<div class="text-center text-white/40 text-xs py-2"><i class="fa-solid fa-spinner animate-spin mr-1"></i> 加载回复...</div>';
 
             db.collection('guestbook').doc(msgId).collection('replies').orderBy('createdAt', 'asc').get().then(snapshot => {
+                // Sync reply count to parent message
+                const count = snapshot.size;
+                db.collection('guestbook').doc(msgId).update({ replyCount: count }).catch(() => {});
+                // Update local message
+                const localMsg = messages.find(m => m.id === msgId);
+                if (localMsg) localMsg.replyCount = count;
+
                 if (snapshot.empty) {
                     container.innerHTML = '<div class="text-center text-white/30 text-xs py-4">暂无回复，来说点什么吧</div>';
                     return;
@@ -1422,8 +1483,14 @@
             const parentMsg = messages.find(m => m.id === currentModalMsgId);
             const replyToName = parentMsg ? parentMsg.name : '';
 
-            // Add reply to subcollection
+            // Increment reply count
             const msgRef = db.collection('guestbook').doc(currentModalMsgId);
+            msgRef.get().then(doc => {
+                const c = (doc.exists && doc.data().replyCount) || 0;
+                msgRef.update({ replyCount: c + 1 }).catch(() => {});
+            }).catch(() => {});
+
+            // Add reply to subcollection
             msgRef.collection('replies').add({
                 name: nameVal,
                 message: msgVal,
