@@ -470,121 +470,7 @@
             appId: "1:417035962967:web:9d3fd07e6baf52c0787112"
         };
         firebase.initializeApp(firebaseConfig);
-        const fbDB = firebase.firestore();
-
-        // Firestore REST API base URL — via Cloudflare Worker for domestic access
-        const API_BASE = 'https://firestore-proxy.royzhao.workers.dev/v1/projects/my-site-6ad7d/databases/(default)/documents';
-
-        // Thin REST wrapper to replace Firestore SDK calls
-        const db = {
-            collection: (name) => ({
-                doc: (id) => ({
-                    collection: (sub) => db.collection(`${name}/${id}/${sub}`),
-                    get: () => firestoreGet(`${name}/${id}`),
-                    set: (data) => firestoreSet(`${name}/${id}`, data),
-                    update: (data) => firestoreUpdate(`${name}/${id}`, data),
-                    delete: () => firestoreDelete(`${name}/${id}`),
-                }),
-                add: (data) => firestoreAdd(name, data),
-                get: () => firestoreList(name),
-                orderBy: (field, dir) => ({ get: () => firestoreList(name, field, dir) }),
-            })
-        };
-
-        // Firestore REST helpers
-        function firestoreWrapFields(data) {
-            const fields = {};
-            for (const [k, v] of Object.entries(data)) {
-                if (v == null) continue;
-                const t = typeof v;
-                if (t === 'string') fields[k] = { stringValue: v };
-                else if (t === 'number') fields[k] = Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
-                else if (t === 'boolean') fields[k] = { booleanValue: v };
-            }
-            return { fields };
-        }
-
-        function firestoreUnwrap(doc) {
-            const fields = doc.fields || {};
-            const data = {};
-            for (const [k, v] of Object.entries(fields)) {
-                data[k] = v.stringValue ?? v.integerValue ?? v.doubleValue ?? v.booleanValue ?? v.timestampValue ?? null;
-                if (v.integerValue != null) data[k] = parseInt(v.integerValue);
-                if (v.doubleValue != null) data[k] = parseFloat(v.doubleValue);
-            }
-            // Extract doc ID from name path
-            const parts = doc.name.split('/');
-            data.id = parts[parts.length - 1];
-            return data;
-        }
-
-        async function firestoreList(path, orderByField, orderDir) {
-            let query = '';
-            if (orderByField) {
-                query = `?orderBy=${orderByField} ${orderDir || 'desc'}`;
-            }
-            const res = await fetch(`${API_BASE}/${path}${query}`);
-            if (!res.ok) throw new Error(`Firestore list failed: ${res.status}`);
-            const json = await res.json();
-            return {
-                forEach: (fn) => {
-                    (json.documents || []).forEach(doc => fn({ id: doc.name.split('/').pop(), data: () => firestoreUnwrap(doc) }));
-                },
-                empty: !json.documents || json.documents.length === 0,
-                size: (json.documents || []).length,
-                docs: (json.documents || []).map(doc => ({ id: doc.name.split('/').pop(), data: () => firestoreUnwrap(doc), ref: { delete: () => firestoreDelete(`${path}/${doc.name.split('/').pop()}`) } }))
-            };
-        }
-
-        async function firestoreGet(path) {
-            const res = await fetch(`${API_BASE}/${path}`);
-            if (!res.ok) throw new Error(`Firestore get failed: ${res.status}`);
-            const json = await res.json();
-            return { exists: !!json.fields, data: () => firestoreUnwrap(json) };
-        }
-
-        async function firestoreAdd(path, data) {
-            const res = await fetch(`${API_BASE}/${path}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(firestoreWrapFields(data))
-            });
-            if (!res.ok) throw new Error(`Firestore add failed: ${res.status}`);
-            const json = await res.json();
-            // Add returns the created document with name path
-            return { id: json.name ? json.name.split('/').pop() : null };
-        }
-
-        async function firestoreSet(path, data) {
-            const res = await fetch(`${API_BASE}/${path}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(firestoreWrapFields(data))
-            });
-            if (!res.ok) throw new Error(`Firestore set failed: ${res.status}`);
-        }
-
-        async function firestoreUpdate(path, data) {
-            return firestoreSet(path, data);
-        }
-
-        async function firestoreDelete(path) {
-            const res = await fetch(`${API_BASE}/${path}`, { method: 'DELETE' });
-            if (!res.ok) throw new Error(`Firestore delete failed: ${res.status}`);
-        }
-
-        // Firestore batch helper
-        const fbBatch = () => {
-            const ops = [];
-            return {
-                delete: (ref) => ops.push(ref),
-                commit: async () => {
-                    for (const ref of ops) {
-                        await firestoreDelete(ref._path);
-                    }
-                }
-            };
-        };
+        const db = firebase.firestore();
 
         // ========== i18n Language System ==========
         let currentLang = 'zh';
@@ -1424,7 +1310,8 @@
             if (!msg || msg.name !== currentUser) return;
             if (!confirm('确定删除这条留言吗？')) return;
             // Delete replies subcollection first, then the message
-            deleteSubcollection(`guestbook/${msgId}/replies`).then(() => {
+            const repliesRef = db.collection('guestbook').doc(msgId).collection('replies');
+            deleteSubcollection(repliesRef).then(() => {
                 return db.collection('guestbook').doc(msgId).delete();
             }).then(() => {
                 closeMessageModal();
@@ -1432,12 +1319,11 @@
             }).catch(err => { console.error('删除失败:', err); });
         }
 
-        function deleteSubcollection(path) {
-            return db.collection(path).get().then(snapshot => {
-                if (snapshot.empty) return Promise.resolve();
-                const dels = [];
-                snapshot.forEach(doc => { dels.push(db.collection(path).doc(doc.id).delete()); });
-                return Promise.all(dels);
+        function deleteSubcollection(ref) {
+            return ref.get().then(snapshot => {
+                const batch = db.batch();
+                snapshot.forEach(doc => batch.delete(doc.ref));
+                return batch.commit();
             });
         }
 
@@ -1554,11 +1440,11 @@
         function clearMessages() {
             if (!confirm(currentLang === 'zh' ? '确定要清空所有留言吗？此操作不可撤销。' : 'Clear all messages? This cannot be undone.')) return;
 
+            const batch = db.batch();
             db.collection('guestbook').get().then(snapshot => {
                 if (snapshot.empty) { showToast(t('toast.cleared')); return; }
-                const dels = [];
-                snapshot.forEach(doc => { dels.push(db.collection('guestbook').doc(doc.id).delete()); });
-                return Promise.all(dels);
+                snapshot.forEach(doc => { batch.delete(doc.ref); });
+                return batch.commit();
             }).then(() => {
                 showToast(t('toast.cleared'));
             }).catch(err => {

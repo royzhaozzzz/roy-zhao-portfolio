@@ -265,11 +265,6 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-db.settings({
-    host: 'firestore-proxy.royzhao.workers.dev',
-    ssl: true,
-    experimentalForceLongPolling: true
-});
 
 // ========== DATA STORE ==========
 let photos = [];
