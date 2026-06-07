@@ -701,19 +701,19 @@
         // Name-based filter state
         let nameFilter = null; // null = show all public, string = show that name's all messages
 
-        // Initialize and load guestbook (Firestore real-time listener)
-        function initGuestbook() {
-            db.collection('guestbook').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+        // Load guestbook from Firestore
+        function loadMessagesFromDB() {
+            return db.collection('guestbook').orderBy('createdAt', 'desc').get().then(snapshot => {
                 messages = [];
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const isNew = (Date.now() - data.createdAt) < 4000;
                     messages.push({
                         id: doc.id,
-                        name: data.name,
-                        message: data.message,
-                        theme: data.theme,
-                        date: data.date,
+                        name: data.name || '',
+                        message: data.message || '',
+                        theme: data.theme || 'classic',
+                        date: data.date || '',
                         time: data.time || '',
                         city: data.city || '',
                         weather: data.weather || '',
@@ -723,11 +723,16 @@
                     });
                 });
                 renderMessages();
-            }, error => {
-                console.warn('Firestore listener error:', error);
-                messages = [];
+            }).catch(err => {
+                console.error('Firestore 读取失败:', err);
                 renderMessages();
             });
+        }
+
+        // Init: load once, then poll every 5 seconds
+        function initGuestbook() {
+            loadMessagesFromDB();
+            setInterval(loadMessagesFromDB, 5000);
         }
 
         // Get filtered messages for display
