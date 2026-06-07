@@ -722,15 +722,18 @@
                         developing: isNew
                     });
                 });
+                console.log('Firestore 读取成功:', messages.length, '条留言');
                 renderMessages();
             }).catch(err => {
-                console.error('Firestore 读取失败:', err);
-                renderMessages();
+                console.error('Firestore 读取失败:', err.code, err.message);
+                const container = document.getElementById('messageBoard');
+                container.innerHTML = '<div class="col-span-2 text-center text-red-400 text-xs py-8">加载失败: ' + err.message + '<br><br>请确认 Firestore 安全规则已发布<br>→ Firebase Console → Firestore → Rules → 发布</div>';
             });
         }
 
         // Init: load once, then poll every 5 seconds
         function initGuestbook() {
+            console.log('开始加载留言...');
             loadMessagesFromDB();
             setInterval(loadMessagesFromDB, 5000);
         }
