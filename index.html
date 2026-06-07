@@ -911,12 +911,21 @@
 
             const nameInput = document.getElementById('visitorName');
             const messageInput = document.getElementById('visitorMessage');
+
+            // Capture values BEFORE async weather call
+            const nameVal = nameInput.value.trim();
+            const messageVal = messageInput.value.trim();
             const selectedTheme = document.querySelector('input[name="noteTheme"]:checked').value;
             const isPrivate = document.getElementById('visitorPrivate').checked;
 
             const today = new Date();
             const dateStr = today.getFullYear() + '.' + String(today.getMonth() + 1).padStart(2, '0') + '.' + String(today.getDate()).padStart(2, '0');
             const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
+
+            // Clear immediately so user can start typing next message
+            nameInput.value = '';
+            messageInput.value = '';
+            document.getElementById('visitorPrivate').checked = false;
 
             // Disable button while submitting
             const submitBtn = document.querySelector('#guestbookForm button[type="submit"]');
@@ -925,8 +934,8 @@
 
             fetchWeatherInfo().then(weatherInfo => {
                 return db.collection('guestbook').add({
-                    name: nameInput.value.trim(),
-                    message: messageInput.value.trim(),
+                    name: nameVal,
+                    message: messageVal,
                     theme: selectedTheme,
                     private: isPrivate,
                     date: dateStr,
@@ -945,10 +954,6 @@
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fa-solid fa-flask"></i><span data-i18n="guestbook.submit">放入显影池</span>';
             });
-
-            nameInput.value = '';
-            messageInput.value = '';
-            document.getElementById('visitorPrivate').checked = false;
         }
 
         // Render Guestbook Cards (Contrast nicely on the gray wall)
