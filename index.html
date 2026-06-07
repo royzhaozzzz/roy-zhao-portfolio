@@ -188,9 +188,8 @@
                         </div>
 
                         <div class="flex items-center gap-2">
-                            <input type="checkbox" id="visitorPrivate" class="accent-[#2c2a27]">
-                            <label for="visitorPrivate" class="text-xs text-[#8c8273] cursor-pointer select-none">仅我可见</label>
-                            <span class="text-[10px] text-[#a39b90]">（勾选后仅站长可见）</span>
+                            <input type="checkbox" id="visitorPrivate" checked class="accent-[#2c2a27]">
+                            <label for="visitorPrivate" class="text-xs text-[#8c8273] cursor-pointer select-none">他人可见</label>
                         </div>
 
                         <button type="submit" class="w-full py-3 bg-[#2c2a27] text-white text-xs uppercase tracking-[0.2em] hover:bg-[#5c554a] transition-colors rounded-sm flex items-center justify-center space-x-2 font-medium shadow-md">
@@ -722,18 +721,15 @@
                         developing: isNew
                     });
                 });
-                console.log('Firestore 读取成功:', messages.length, '条留言');
                 renderMessages();
             }).catch(err => {
-                console.error('Firestore 读取失败:', err.code, err.message);
-                const container = document.getElementById('messageBoard');
-                container.innerHTML = '<div class="col-span-2 text-center text-red-400 text-xs py-8">加载失败: ' + err.message + '<br><br>请确认 Firestore 安全规则已发布<br>→ Firebase Console → Firestore → Rules → 发布</div>';
+                console.error('Firestore 读取失败:', err);
+                renderMessages();
             });
         }
 
         // Init: load once, then poll every 5 seconds
         function initGuestbook() {
-            console.log('开始加载留言...');
             loadMessagesFromDB();
             setInterval(loadMessagesFromDB, 5000);
         }
@@ -916,7 +912,7 @@
             const nameVal = nameInput.value.trim();
             const messageVal = messageInput.value.trim();
             const selectedTheme = document.querySelector('input[name="noteTheme"]:checked').value;
-            const isPrivate = document.getElementById('visitorPrivate').checked;
+            const isPrivate = !document.getElementById('visitorPrivate').checked; // unchecked = private
 
             const today = new Date();
             const dateStr = today.getFullYear() + '.' + String(today.getMonth() + 1).padStart(2, '0') + '.' + String(today.getDate()).padStart(2, '0');
@@ -925,17 +921,14 @@
             // Clear immediately so user can start typing next message
             nameInput.value = '';
             messageInput.value = '';
-            document.getElementById('visitorPrivate').checked = false;
+            document.getElementById('visitorPrivate').checked = true;
 
             // Disable button while submitting
             const submitBtn = document.querySelector('#guestbookForm button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i><span>获取天气中...</span>';
 
-            console.log('准备写入 Firestore:', { name: nameVal, message: messageVal, theme: selectedTheme, private: isPrivate, date: dateStr, time: timeStr });
-
             fetchWeatherInfo().then(weatherInfo => {
-                console.log('天气获取完成，写入数据库...');
                 return db.collection('guestbook').add({
                     name: nameVal,
                     message: messageVal,
