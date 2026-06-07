@@ -6,7 +6,10 @@
     <title>Roy Zhao / 赵润涵 - Film Photography Portfolio</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome for standard photography icons -->
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts for exquisite Chinese Serif -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -387,6 +390,18 @@
     </div>
 
     <script>
+        // ========== Firebase Config ==========
+        const firebaseConfig = {
+            apiKey: "AIzaSyDIsAUYNICA3CPFPF-vjaH1_uhZF-kEClo",
+            authDomain: "my-site-6ad7d.firebaseapp.com",
+            projectId: "my-site-6ad7d",
+            storageBucket: "my-site-6ad7d.firebasestorage.app",
+            messagingSenderId: "417035962967",
+            appId: "1:417035962967:web:9d3fd07e6baf52c0787112"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         // ========== i18n Language System ==========
         let currentLang = 'zh';
         let currentFilter = 'all';
@@ -669,16 +684,30 @@
         let currentActiveId = 1;
         let messages = [];
 
-        // Initialize and load guestbook
+        // Initialize and load guestbook (Firestore real-time listener)
         function initGuestbook() {
-            const stored = localStorage.getItem('roy_zhao_portfolio_messages');
-            if (stored) {
-                messages = JSON.parse(stored);
-            } else {
-                messages = [...defaultMessages];
-                localStorage.setItem('roy_zhao_portfolio_messages', JSON.stringify(messages));
-            }
-            renderMessages();
+            db.collection('guestbook').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+                messages = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // Show developing animation for messages less than 4 seconds old
+                    const isNew = (Date.now() - data.createdAt) < 4000;
+                    messages.push({
+                        id: doc.id,
+                        name: data.name,
+                        message: data.message,
+                        theme: data.theme,
+                        date: data.date,
+                        developing: isNew
+                    });
+                });
+                renderMessages();
+            }, error => {
+                console.warn('Firestore listener error:', error);
+                // Fallback to empty
+                messages = [];
+                renderMessages();
+            });
         }
 
         // Render Portfolio Grid
@@ -789,42 +818,29 @@
         // Guestbook Submit and Polaroid Chemical Developing Simulation
         function handleGuestbookSubmit(event) {
             event.preventDefault();
-            
+
             const nameInput = document.getElementById('visitorName');
             const messageInput = document.getElementById('visitorMessage');
             const selectedTheme = document.querySelector('input[name="noteTheme"]:checked').value;
-            
-            const newId = Date.now();
+
             const today = new Date();
             const dateStr = today.getFullYear() + '.' + String(today.getMonth() + 1).padStart(2, '0') + '.' + String(today.getDate()).padStart(2, '0');
 
-            const newNote = {
-                id: newId,
-                name: nameInput.value,
-                message: messageInput.value,
+            db.collection('guestbook').add({
+                name: nameInput.value.trim(),
+                message: messageInput.value.trim(),
                 theme: selectedTheme,
                 date: dateStr,
-                developing: true 
-            };
-
-            messages.unshift(newNote);
-            localStorage.setItem('roy_zhao_portfolio_messages', JSON.stringify(messages));
-            
-            renderMessages();
-            showToast(t('toast.sent'));
+                createdAt: Date.now()
+            }).then(() => {
+                showToast(t('toast.sent'));
+            }).catch(err => {
+                console.error('留言失败:', err);
+                showToast(currentLang === 'zh' ? '留言失败，请重试' : 'Failed to submit, please retry');
+            });
 
             nameInput.value = '';
             messageInput.value = '';
-
-            // Complete simulation after 3.5 seconds
-            setTimeout(() => {
-                const updatedIndex = messages.findIndex(m => m.id === newId);
-                if (updatedIndex !== -1) {
-                    messages[updatedIndex].developing = false;
-                    localStorage.setItem('roy_zhao_portfolio_messages', JSON.stringify(messages));
-                    renderMessages();
-                }
-            }, 3500);
         }
 
         // Render Guestbook Cards (Contrast nicely on the gray wall)
@@ -881,13 +897,20 @@
             });
         }
 
-        // Clear Local messages
+        // Clear messages from Firestore
         function clearMessages() {
-            if (confirm(currentLang === 'zh' ? '确定要清空所有留言吗？' : 'Clear all messages? This cannot be undone.')) {
-                localStorage.removeItem('roy_zhao_portfolio_messages');
-                initGuestbook();
+            if (!confirm(currentLang === 'zh' ? '确定要清空所有留言吗？此操作不可撤销。' : 'Clear all messages? This cannot be undone.')) return;
+
+            const batch = db.batch();
+            db.collection('guestbook').get().then(snapshot => {
+                if (snapshot.empty) { showToast(t('toast.cleared')); return; }
+                snapshot.forEach(doc => { batch.delete(doc.ref); });
+                return batch.commit();
+            }).then(() => {
                 showToast(t('toast.cleared'));
-            }
+            }).catch(err => {
+                console.error('清空失败:', err);
+            });
         }
 
         // Custom Toast Notification
