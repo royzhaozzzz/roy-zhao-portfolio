@@ -673,6 +673,45 @@
                 focal: "35mm",
                 location: "四川 · 射洪",
                 desc: "春天到了！🌱"
+            },
+            {
+                id: 10,
+                title: "夏天的傍晚",
+                category: "landscape",
+                src: "images/SZX_47791.JPG",
+                film: "Kodak 5219",
+                camera: "Nikon FE2",
+                aperture: "f/5.6",
+                shutter: "1/125s",
+                focal: "35mm",
+                location: "深圳",
+                desc: ""
+            },
+            {
+                id: 11,
+                title: "出门",
+                category: "landscape",
+                src: "images/URC_2364.jpg",
+                film: "Digital",
+                camera: "Nikon Z7Ⅱ",
+                aperture: "f/5.6",
+                shutter: "1/125s",
+                focal: "24-200mm",
+                location: "新疆 · 禾木",
+                desc: "刚刚走出小木屋，天正在亮"
+            },
+            {
+                id: 12,
+                title: "山脉连绵",
+                category: "landscape",
+                src: "images/URC_1629.jpg",
+                film: "Digital",
+                camera: "Nikon Z7Ⅱ",
+                aperture: "f/5.6",
+                shutter: "1/125s",
+                focal: "24-200mm",
+                location: "新疆",
+                desc: "前往乌鲁木齐的路上"
             }
         ];
 
@@ -683,7 +722,9 @@
                 if (!raw) return;
                 const admin = JSON.parse(raw);
 
-                if (admin.photos && admin.photos.length) {
+                // Photos are hardcoded — admin bridge only syncs hero/about/guestbook text
+                // (Uncomment below to re-enable admin photo sync)
+                /* if (admin.photos && admin.photos.length) {
                     photos.length = 0;
                     admin.photos.forEach((p, i) => {
                         photos.push({
@@ -693,7 +734,7 @@
                             location: p.location || '', desc: p.desc || ''
                         });
                     });
-                }
+                } */
 
                 if (admin.hero) {
                     const h = admin.hero;
