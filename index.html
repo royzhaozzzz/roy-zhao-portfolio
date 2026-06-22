@@ -74,11 +74,196 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #a39b90;
         }
+
+    /* ===== 节日遮罩动画系统 ===== */
+
+    .holiday-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        background: rgba(245, 244, 240, 0.5);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        visibility: hidden;
+        opacity: 0;
+        will-change: opacity;
+        transition: opacity 0.7s ease-out, visibility 0s 0.7s;
+    }
+    .holiday-overlay.active {
+        visibility: visible;
+        opacity: 1;
+        transition: opacity 0.6s ease-out, visibility 0s 0s;
+    }
+    .holiday-overlay.fade-out {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.7s ease-in, visibility 0s 0.7s;
+    }
+
+    .holiday-poster {
+        background: #fffdf9;
+        border: 1px solid #e2dcd0;
+        box-shadow:
+            0 4px 24px rgba(0,0,0,0.12),
+            0 20px 60px rgba(0,0,0,0.18),
+            inset 0 0 0 8px #fffdf9,
+            inset 0 0 0 9px #d4cdbc;
+        padding: 48px 40px 40px;
+        max-width: 420px;
+        width: 90%;
+        text-align: center;
+        position: relative;
+        cursor: default;
+        opacity: 0;
+        transform: scale(0.85) translateY(20px);
+        transition: opacity 0.7s cubic-bezier(0.25, 1, 0.5, 1) 0.25s,
+                    transform 0.7s cubic-bezier(0.25, 1, 0.5, 1) 0.25s;
+    }
+    .holiday-overlay.active .holiday-poster {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    .holiday-poster::before {
+        content: '';
+        position: absolute;
+        top: 16px; left: 24px; right: 24px;
+        height: 2px;
+        background: repeating-linear-gradient(
+            90deg,
+            #e2dcd0 0px,
+            #e2dcd0 8px,
+            transparent 8px,
+            transparent 16px
+        );
+    }
+    .holiday-poster::after {
+        content: '';
+        position: absolute;
+        bottom: 16px; left: 24px; right: 24px;
+        height: 2px;
+        background: repeating-linear-gradient(
+            90deg,
+            #e2dcd0 0px,
+            #e2dcd0 8px,
+            transparent 8px,
+            transparent 16px
+        );
+    }
+
+    .holiday-poster .poster-emoji {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 16px;
+        margin-top: 28px;
+    }
+    .holiday-poster .poster-emoji svg {
+        display: block;
+        width: 86px;
+        height: auto;
+    }
+    .holiday-poster .poster-title {
+        font-family: 'Noto Serif SC', serif;
+        font-size: 28px;
+        font-weight: 300;
+        color: #2c2a27;
+        letter-spacing: 0.12em;
+        margin-bottom: 8px;
+    }
+    .holiday-poster .poster-sub {
+        font-size: 13px;
+        color: #8c8273;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        margin-bottom: 24px;
+    }
+    .holiday-poster .poster-hint {
+        font-size: 11px;
+        color: #bfb9ab;
+        letter-spacing: 0.25em;
+        margin-top: 20px;
+        animation: hintBlink 2.5s ease-in-out infinite;
+    }
+    @keyframes hintBlink {
+        0%, 100% { opacity: 0.35; }
+        50% { opacity: 1; }
+    }
+    .holiday-poster .poster-line {
+        width: 40px;
+        height: 1px;
+        background: #d4cdbc;
+        margin: 16px auto;
+    }
+
+    /* ===== 瀑布 Emoji ===== */
+    .waterfall-emojis {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        z-index: 30;
+        pointer-events: none;
+        overflow: hidden;
+    }
+    .waterfall-emoji {
+        position: absolute;
+        top: -40px;
+        font-size: 18px;
+        animation: emojiFall var(--dur) var(--delay) linear infinite;
+        opacity: 0;
+    }
+    @keyframes emojiFall {
+        0%   { opacity: 0; transform: translateY(0) translateX(0) rotate(0deg); }
+        3%   { opacity: 0.7; }
+        90%  { opacity: 0.6; }
+        100% { opacity: 0; transform: translateY(105vh) translateX(var(--drift)) rotate(var(--spin)); }
+    }
     </style>
 </head>
 <body class="relative min-h-screen selection:bg-[#2c2a27] selection:text-[#f7f4eb]">
 
     <div class="vignette"></div>
+
+    <!-- 节日遮罩层 -->
+    <div id="holidayOverlay" class="holiday-overlay">
+        <div class="holiday-poster" onclick="event.stopPropagation()">
+            <div class="poster-emoji">
+                <svg width="72" height="80" viewBox="0 0 72 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- 蜡烛 -->
+                    <line x1="36" y1="8" x2="36" y2="24" stroke="#2c2a27" stroke-width="1.6" stroke-linecap="round"/>
+                    <!-- 火焰外焰 -->
+                    <path d="M36 2 C33 6 34 8 36 8 C38 8 39 6 36 2Z" fill="#f0d89c" stroke="#c4a96a" stroke-width="0.9" stroke-linejoin="round"/>
+                    <!-- 火焰内焰 -->
+                    <path d="M36 4 C35 6.5 35.5 8 36 8 C36.5 8 37 6.5 36 4Z" fill="#fff8e8" stroke="none"/>
+                    <!-- 第一层 -->
+                    <rect x="18" y="24" width="36" height="12" rx="3" stroke="#2c2a27" stroke-width="1.6" fill="none"/>
+                    <!-- 第一层上沿奶油 -->
+                    <path d="M18 28 C24 24 30 26 36 24 C42 22 48 26 54 28" stroke="#2c2a27" stroke-width="1.4" fill="none"/>
+                    <!-- 第二层 -->
+                    <rect x="12" y="36" width="48" height="14" rx="3" stroke="#2c2a27" stroke-width="1.6" fill="none"/>
+                    <!-- 第二层上沿奶油 -->
+                    <path d="M12 40 C20 35 28 42 36 36 C44 30 52 42 60 40" stroke="#2c2a27" stroke-width="1.4" fill="none"/>
+                    <!-- 底座 -->
+                    <rect x="10" y="50" width="52" height="5" rx="2" stroke="#2c2a27" stroke-width="1.6" fill="none"/>
+                    <!-- 底座线 -->
+                    <line x1="14" y1="52.5" x2="58" y2="52.5" stroke="#2c2a27" stroke-width="0.8"/>
+                    <!-- 樱桃 -->
+                    <circle cx="28" cy="21" r="3" stroke="#2c2a27" stroke-width="1.1" fill="none"/>
+                    <circle cx="44" cy="21" r="3" stroke="#2c2a27" stroke-width="1.1" fill="none"/>
+                </svg>
+            </div>
+            <div class="poster-title">今天是我的生日</div>
+            <div class="poster-sub">Thanks for passing by my twenties</div>
+            <div class="poster-line"></div>
+            <div class="poster-hint">— 点击任意处进入 —</div>
+        </div>
+    </div>
+
+    <!-- 瀑布 Emoji 容器 -->
+    <div id="waterfallEmojis" class="waterfall-emojis"></div>
 
     <header class="sticky top-0 z-40 bg-black/95 backdrop-blur-md border-b border-white/10 px-6 py-4 md:px-12 md:py-6 vintage-transition">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
@@ -1695,12 +1880,119 @@
             }
         }
 
+        // ===== 节日动画系统 =====
+
+        const HOLIDAY_CONFIG = [
+            {
+                type: 'birthday',
+                month: 7, day: 27,
+                emoji: '🎂',
+                titleZh: '今天是我的生日',
+                titleEn: "Today Is My Birthday",
+                subZh: '谢谢你，刚好路过我的20岁',
+                subEn: 'Thanks for passing by my twenties',
+                floatEmojis: ['🎂', '🎉', '🎈', '🎁', '✨', '🥳', '🎊', '💫']
+            }
+        ];
+
+        function getTodaysHoliday() {
+            const today = new Date();
+            const month = today.getMonth() + 1;
+            const day = today.getDate();
+
+            // DEBUG: 预览模式（确认风格后已关闭）
+            // return HOLIDAY_CONFIG[0];
+
+            // 正式模式
+            return HOLIDAY_CONFIG.find(h => h.month === month && h.day === day) || null;
+        }
+
+        function checkHoliday() {
+            const holiday = getTodaysHoliday();
+            if (!holiday) return;
+            showHolidayOverlay(holiday);
+        }
+
+        function showHolidayOverlay(holiday) {
+            const overlay = document.getElementById('holidayOverlay');
+            if (!overlay) return;
+
+            const currentLang = localStorage.getItem('roy_zhao_lang') || 'zh';
+            const title = currentLang === 'zh' ? holiday.titleZh : holiday.titleEn;
+            const sub = currentLang === 'zh' ? holiday.subZh : holiday.subEn;
+
+            overlay.querySelector('.poster-title').textContent = title;
+            overlay.querySelector('.poster-sub').textContent = sub;
+
+            // 两帧 RAF 确保浏览器先渲染初始状态再触发过渡
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    overlay.classList.add('active');
+                });
+            });
+
+            overlay.onclick = function () {
+                dismissOverlay(holiday);
+            };
+        }
+
+        function dismissOverlay(holiday) {
+            const overlay = document.getElementById('holidayOverlay');
+            if (!overlay) return;
+
+            overlay.classList.remove('active');
+            overlay.classList.add('fade-out');
+
+            // 过渡结束后隐藏并启动瀑布 emoji
+            overlay.addEventListener('transitionend', function handler() {
+                overlay.removeEventListener('transitionend', handler);
+                overlay.classList.remove('fade-out');
+                overlay.classList.remove('active');
+                spawnWaterfallEmojis(holiday.floatEmojis);
+            }, { once: true });
+
+            // fallback: 850ms 后强制触发
+            setTimeout(() => {
+                if (overlay.classList.contains('fade-out')) {
+                    overlay.classList.remove('fade-out', 'active');
+                    spawnWaterfallEmojis(holiday.floatEmojis);
+                }
+            }, 850);
+        }
+
+        function spawnWaterfallEmojis(emojis) {
+            const container = document.getElementById('waterfallEmojis');
+            if (!container) return;
+            container.innerHTML = '';
+
+            // 瀑布流：稀疏分布，持续流动
+            const count = 22;
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('span');
+                el.className = 'waterfall-emoji';
+                el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                el.style.left = (Math.random() * 94) + '%';
+                // 持续时间 8~16s，快慢不一
+                el.style.setProperty('--dur', (8 + Math.random() * 10) + 's');
+                // 延迟错开：0~12s
+                el.style.setProperty('--delay', (Math.random() * 12) + 's');
+                // 水平漂移 -60~60px
+                el.style.setProperty('--drift', (Math.random() - 0.5) * 120 + 'px');
+                // 旋转 -180~180deg
+                el.style.setProperty('--spin', (Math.random() - 0.5) * 360 + 'deg');
+                // 大小 14~26px
+                el.style.fontSize = (14 + Math.random() * 14) + 'px';
+                container.appendChild(el);
+            }
+        }
+
         // On Load Execution
         window.onload = function () {
             loadLang();
             loadUser();
             renderGallery('all');
             initGuestbook();
+            checkHoliday();
         };
     </script>
 </body>
