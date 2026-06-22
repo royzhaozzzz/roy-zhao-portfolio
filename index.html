@@ -224,6 +224,31 @@
         to   { opacity: 1; transform: translateY(0); }
     }
 
+    /* 留影簿翻页动画 */
+    #messageBoard.transitioning {
+        opacity: 0;
+        transform: translateY(6px);
+        transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+    }
+    #messageBoard {
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 0.35s ease-in, transform 0.35s ease-in;
+    }
+    #messageBoard .message-card {
+        animation: msgFadeIn 0.35s ease-out both;
+    }
+    .message-card:nth-child(1) { animation-delay: 0.03s; }
+    .message-card:nth-child(2) { animation-delay: 0.08s; }
+    .message-card:nth-child(3) { animation-delay: 0.13s; }
+    .message-card:nth-child(4) { animation-delay: 0.18s; }
+    .message-card:nth-child(5) { animation-delay: 0.23s; }
+    .message-card:nth-child(6) { animation-delay: 0.28s; }
+    @keyframes msgFadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
     /* ===== 瀑布 Emoji ===== */
     .waterfall-emojis {
         position: fixed;
@@ -1252,7 +1277,7 @@
                             </span>
                         </div>
                         <div class="flex justify-between items-center text-xs text-[#8c8273] tracking-wider font-light">
-                            <span><i class="fa-solid fa-camera mr-1 text-[10px]"></i> ${photo.camera}</span>
+                            <span>${photo.camera}</span>
                             <span>${photo.location}</span>
                         </div>
                     </div>
@@ -1637,7 +1662,7 @@
                 if (msg.city) weatherLine += ' · ' + msg.city;
                 if (msg.private) weatherLine += ' · 🔒';
 
-                card.className = `p-5 pb-8 shadow-xl rounded-sm border ${themeClasses} hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 relative ${devStyleClass} cursor-pointer`;
+                card.className = `message-card p-5 pb-8 shadow-xl rounded-sm border ${themeClasses} hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 relative ${devStyleClass} cursor-pointer`;
 
                 card.innerHTML = `
                     ${indicatorMarkup}
@@ -1713,9 +1738,13 @@
         }
 
         function goToPage(page) {
-            currentPage = page;
-            renderMessages();
-            document.getElementById('messageBoard').scrollIntoView({ behavior: 'smooth' });
+            const board = document.getElementById('messageBoard');
+            board.classList.add('transitioning');
+            setTimeout(() => {
+                currentPage = page;
+                renderMessages();
+                board.classList.remove('transitioning');
+            }, 200);
         }
 
         // Simple string hash for consistent rotation
@@ -1985,9 +2014,25 @@
         // Smooth Scrolling Anchor
         function scrollToSection(id) {
             const target = document.getElementById(id);
-            if (target) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (!target) return;
+
+            const start = window.scrollY;
+            const end = target.getBoundingClientRect().top + start - 70;
+            const duration = 900;
+            const startTime = performance.now();
+
+            function easeInOutCubic(t) {
+                return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
             }
+
+            function step(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                window.scrollTo(0, start + (end - start) * easeInOutCubic(progress));
+                if (progress < 1) requestAnimationFrame(step);
+            }
+
+            requestAnimationFrame(step);
         }
 
         // ===== 节日动画系统 =====
