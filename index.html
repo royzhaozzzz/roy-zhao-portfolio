@@ -199,6 +199,31 @@
         margin: 16px auto;
     }
 
+    /* ===== 画廊翻页动画 ===== */
+    #photoGrid.transitioning {
+        opacity: 0;
+        transform: translateY(6px);
+        transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+    }
+    #photoGrid {
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 0.35s ease-in, transform 0.35s ease-in;
+    }
+    #photoGrid .gallery-card {
+        animation: cardFadeIn 0.4s ease-out both;
+    }
+    #photoGrid .gallery-card:nth-child(1) { animation-delay: 0.05s; }
+    #photoGrid .gallery-card:nth-child(2) { animation-delay: 0.1s; }
+    #photoGrid .gallery-card:nth-child(3) { animation-delay: 0.15s; }
+    #photoGrid .gallery-card:nth-child(4) { animation-delay: 0.2s; }
+    #photoGrid .gallery-card:nth-child(5) { animation-delay: 0.25s; }
+    #photoGrid .gallery-card:nth-child(6) { animation-delay: 0.3s; }
+    @keyframes cardFadeIn {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
     /* ===== 瀑布 Emoji ===== */
     .waterfall-emojis {
         position: fixed;
@@ -315,12 +340,18 @@
         <div class="max-w-7xl mx-auto px-6 md:px-12">
             
             <!-- Section Title -->
-            <div class="text-center space-y-3 mb-16">
+            <div class="text-center space-y-3 mb-6">
                 <span class="text-xs uppercase tracking-[0.5em] text-[#8c8273]" data-i18n="gallery.tag">精选作品</span>
                 <h3 class="text-2xl md:text-3xl font-light tracking-[0.15em] text-[#2c2a27]" data-i18n="gallery.heading">底片册</h3>
                 <div class="w-8 h-[1px] bg-[#2c2a27]/50 mx-auto"></div>
             </div>
 
+            <!-- Filter Buttons -->
+            <div class="flex justify-center gap-3 mb-10" id="filterBar">
+                <button class="filter-btn px-5 py-2.5 rounded border border-[#2c2a27] bg-[#2c2a27] text-white transition-all font-medium" data-filter="all" onclick="filterGallery('all')" data-i18n="filter.all">全部</button>
+                <button class="filter-btn px-5 py-2.5 rounded border border-[#c5beb4] text-[#5c554a] hover:border-[#2c2a27] hover:text-[#2c2a27] transition-all" data-filter="digital" onclick="filterGallery('digital')" data-i18n="filter.digital">数码</button>
+                <button class="filter-btn px-5 py-2.5 rounded border border-[#c5beb4] text-[#5c554a] hover:border-[#2c2a27] hover:text-[#2c2a27] transition-all" data-filter="film" onclick="filterGallery('film')" data-i18n="filter.film">胶片</button>
+            </div>
 
             <!-- Photo Grid -->
             <div id="photoGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
@@ -720,6 +751,13 @@
             'toast.sent':        { zh: '底片已入显影池，正在暗房成像...', en: 'Note in the developer bath, imaging in progress...' },
             'toast.cleared':     { zh: '已恢复预设留影簿。', en: 'Guestbook restored to defaults.' },
             'confirm.clear':     { zh: '确定要清空所有留言吗？', en: 'Clear all messages? This cannot be undone.' },
+            'filter.all':        { zh: '全部',            en: 'All' },
+            'filter.digital':    { zh: '数码',            en: 'Digital' },
+            'filter.film':       { zh: '胶片',            en: 'Film' },
+            'pagination.prev':   { zh: '‹ 上一页',        en: '‹ Prev' },
+            'pagination.next':   { zh: '下一页 ›',        en: 'Next ›' },
+            'pagination.photos': { zh: '张照片',          en: ' photos' },
+            'pagination.pages':  { zh: '页',              en: ' pages' },
         };
 
         function t(key) {
@@ -746,9 +784,9 @@
                     el.placeholder = i18n[key][currentLang];
                 }
             });
-            // Re-render gallery with current lang
+            // Re-render gallery with current lang + pagination
             if (typeof renderGallery === 'function') {
-                renderGallery(currentFilter);
+                renderGallery(currentFilter, galleryCurrentPage);
             }
         }
 
@@ -1159,22 +1197,42 @@
             renderMessages();
         }
 
+        // Gallery Pagination
+        const GALLERY_PAGE_SIZE = 6;
+        let galleryCurrentPage = 1;
+
         // Render Portfolio Grid
-        function renderGallery(filter = 'all') {
+        function renderGallery(filter = 'all', page = 1) {
             const grid = document.getElementById('photoGrid');
             grid.innerHTML = '';
 
-            const filtered = filter === 'all' ? photos : photos.filter(p => p.category === filter);
+            // Filter by film type
+            let filtered;
+            if (filter === 'digital') {
+                filtered = photos.filter(p => p.film === 'Digital');
+            } else if (filter === 'film') {
+                filtered = photos.filter(p => p.film !== 'Digital');
+            } else {
+                filtered = photos;
+            }
 
-            filtered.forEach(photo => {
+            // Pagination
+            const totalPages = Math.ceil(filtered.length / GALLERY_PAGE_SIZE) || 1;
+            if (page > totalPages) page = totalPages;
+            galleryCurrentPage = page;
+            const start = (page - 1) * GALLERY_PAGE_SIZE;
+            const pagePhotos = filtered.slice(start, start + GALLERY_PAGE_SIZE);
+
+            // Render cards
+            pagePhotos.forEach(photo => {
                 const card = document.createElement('div');
-                card.className = "group bg-white p-4 pb-12 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-sm border border-[#e2dcd0] transform hover:-translate-y-1 cursor-pointer";
+                card.className = "gallery-card group bg-white px-4 py-3 pb-8 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-sm border border-[#e2dcd0] transform hover:-translate-y-1 cursor-pointer";
                 card.onclick = () => openLightbox(photo.id);
 
                 card.innerHTML = `
                     <div class="aspect-w-4 aspect-h-3 overflow-hidden bg-stone-100 relative">
-                        <img src="${photo.src}" 
-                             alt="${photo.title}" 
+                        <img src="${photo.src}"
+                             alt="${photo.title}"
                              class="object-cover w-full h-64 filter grayscale-[5%] sepia-[10%] group-hover:scale-105 duration-700 ease-in-out"
                              loading="lazy"
                              onerror="this.src='https://placehold.co/600x450/d6cfc2/2c2a27?text=Film+Photo'">
@@ -1184,7 +1242,7 @@
                             </span>
                         </div>
                     </div>
-                    <div class="mt-5 flex flex-col space-y-2">
+                    <div class="mt-4 flex flex-col space-y-2">
                         <div class="flex justify-between items-start">
                             <h4 class="text-base font-medium tracking-wide text-[#2c2a27] group-hover:text-[#8c8273] transition-colors">
                                 ${photo.title}
@@ -1201,9 +1259,60 @@
                 `;
                 grid.appendChild(card);
             });
+
+            // Pagination controls
+            renderGalleryPagination(totalPages, page, filtered.length);
         }
 
-        // Category Filter
+        // Gallery Pagination UI
+        function renderGalleryPagination(totalPages, currentPage, totalPhotos) {
+            const grid = document.getElementById('photoGrid');
+            const section = grid.parentElement;
+            const oldPag = section.querySelector('.gallery-pagination');
+            if (oldPag) oldPag.remove();
+
+            if (totalPages <= 1) return;
+
+            const pagDiv = document.createElement('div');
+            pagDiv.className = 'gallery-pagination col-span-full flex justify-center items-center gap-2 mt-6 pt-4 border-t border-[#e2dcd0]';
+
+            let html = '';
+            // Prev
+            html += `<button onclick="goToGalleryPage(${currentPage - 1}, event)" ${currentPage <= 1 ? 'disabled' : ''} class="px-3 py-1 text-xs border rounded ${currentPage <= 1 ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-[#2c2a27] border-[#c5beb4] hover:bg-[#f5f4f0]'}">${t('pagination.prev')}</button>`;
+
+            // Page numbers
+            for (let p = 1; p <= totalPages; p++) {
+                if (p === currentPage) {
+                    html += `<span class="px-3 py-1 text-xs bg-[#2c2a27] text-white rounded">${p}</span>`;
+                } else if (Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages) {
+                    html += `<button onclick="goToGalleryPage(${p}, event)" class="px-3 py-1 text-xs border border-[#c5beb4] rounded hover:bg-[#f5f4f0] text-[#2c2a27]">${p}</button>`;
+                } else if (Math.abs(p - currentPage) === 3) {
+                    html += '<span class="text-xs text-gray-400">...</span>';
+                }
+            }
+
+            // Next
+            html += `<button onclick="goToGalleryPage(${currentPage + 1}, event)" ${currentPage >= totalPages ? 'disabled' : ''} class="px-3 py-1 text-xs border rounded ${currentPage >= totalPages ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-[#2c2a27] border-[#c5beb4] hover:bg-[#f5f4f0]'}">${t('pagination.next')}</button>`;
+
+            // Stats
+            html += `<span class="text-[10px] text-gray-400 ml-3">${totalPhotos} ${t('pagination.photos')} · ${totalPages} ${t('pagination.pages')}</span>`;
+
+            pagDiv.innerHTML = html;
+            section.appendChild(pagDiv);
+        }
+
+        function goToGalleryPage(page, event) {
+            if (event) { event.preventDefault(); event.stopPropagation(); }
+            const grid = document.getElementById('photoGrid');
+            grid.classList.add('transitioning');
+            setTimeout(() => {
+                galleryCurrentPage = page;
+                renderGallery(currentFilter, page);
+                grid.classList.remove('transitioning');
+            }, 200);
+        }
+
+        // Film Type Filter
         function filterGallery(category) {
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.className = "filter-btn px-5 py-2.5 rounded border border-[#c5beb4] text-[#5c554a] hover:border-[#2c2a27] hover:text-[#2c2a27] transition-all";
@@ -1215,7 +1324,8 @@
             }
 
             currentFilter = category;
-            renderGallery(category);
+            galleryCurrentPage = 1;
+            renderGallery(category, 1);
         }
 
         // Lightbox Functions
@@ -1990,7 +2100,6 @@
         window.onload = function () {
             loadLang();
             loadUser();
-            renderGallery('all');
             initGuestbook();
             checkHoliday();
         };
