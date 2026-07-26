@@ -936,7 +936,7 @@
             </div>
             <div class="space-y-3">
                 <input type="text" id="loginNickname" placeholder="昵称" class="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-center text-lg placeholder-white/30 focus:outline-none focus:border-white/50 transition-colors">
-                <input type="password" id="loginPassword" placeholder="六位数字密码" maxlength="6" inputmode="numeric" pattern="[0-9]*" class="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-center text-lg placeholder-white/30 focus:outline-none focus:border-white/50 transition-colors tracking-[0.3em]">
+                <input type="password" id="loginPassword" placeholder="密码（至少6位）" maxlength="32" class="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-center text-lg placeholder-white/30 focus:outline-none focus:border-white/50 transition-colors tracking-[0.3em]">
                 <button id="loginSubmitBtn" onclick="doLogin()" class="w-full py-3 bg-white text-[#2c2a27] text-sm tracking-wider rounded-sm hover:bg-gray-200 transition-colors font-medium">
                     登录
                 </button>
@@ -1907,31 +1907,41 @@
             }
         }
 
-        function doLogin() {
+        // SHA-256 哈希
+        async function hashPassword(pw) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(pw + 'roy_zhao_salt_2026');
+            const hash = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+        }
+
+        async function doLogin() {
             const nickname = document.getElementById('loginNickname').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
             if (!nickname) { alert('请输入昵称'); return; }
             if (nickname.length > 20) { alert('昵称太长了'); return; }
-            if (!password || password.length !== 6 || !/^\d{6}$/.test(password)) { alert('密码必须是六位数字'); return; }
+            if (!password || password.length < 6) { alert('密码至少需要6位字符'); return; }
 
             const userRef = db.collection('users').doc(nickname);
 
             if (isLoginMode) {
-                // Login: verify password
-                userRef.get().then(doc => {
+                // Login: verify hashed password
+                userRef.get().then(async doc => {
                     if (!doc.exists) { alert('账号不存在，请先注册'); return; }
                     const data = doc.data();
-                    if (data.password !== password) { alert('密码错误'); return; }
+                    const inputHash = await hashPassword(password);
+                    if (data.password !== inputHash) { alert('密码错误'); return; }
                     userRef.update({ lastLogin: Date.now() }).catch(() => {});
                     loginSuccess(nickname);
                 }).catch(err => { alert('登录失败，请重试'); });
             } else {
-                // Register: check if exists, then create
+                // Register: hash password before storing
+                const hashedPw = await hashPassword(password);
                 userRef.get().then(doc => {
                     if (doc.exists) { alert('该昵称已被注册，换一个吧'); return Promise.reject('EXISTS'); }
                     return userRef.set({
                         nickname: nickname,
-                        password: password,
+                        password: hashedPw,
                         createdAt: Date.now(),
                         lastLogin: Date.now()
                     });
@@ -1943,16 +1953,17 @@
             }
         }
 
-        function resetPassword() {
+        async function resetPassword() {
             const nickname = prompt('请输入需要重置密码的昵称：');
             if (!nickname || !nickname.trim()) return;
-            const newPw = prompt('请输入新的六位数字密码：');
-            if (!newPw || newPw.length !== 6 || !/^\d{6}$/.test(newPw)) { alert('密码必须是六位数字'); return; }
+            const newPw = prompt('请输入新密码（至少6位字符）：');
+            if (!newPw || !newPw.trim() || newPw.trim().length < 6) { alert('密码至少需要6位字符'); return; }
 
+            const hashedPw = await hashPassword(newPw.trim());
             const userRef = db.collection('users').doc(nickname.trim());
             userRef.get().then(doc => {
                 if (!doc.exists) { alert('该账号不存在'); return; }
-                return userRef.update({ password: newPw.trim() });
+                return userRef.update({ password: hashedPw });
             }).then(() => {
                 alert('密码重置成功！请重新登录');
             }).catch(err => {
@@ -1998,7 +2009,7 @@
         }
 
         // Admin password (change this!)
-        const ADMIN_PASSWORD = 'Zrh20060727';
+        const ADMIN_PASSWORD_HASH = 'cd87789d49b1782efac3c8cc0d828145371588d8ca196cff4cfcaa6a72d571ef';
         let isAdminMode = false;
 
         function renderMessages() {
@@ -2328,11 +2339,13 @@
         });
 
         // Admin toggle
-        function toggleAdmin() {
+        async function toggleAdmin() {
             if (isAdminMode) { isAdminMode = false; currentPage = 1; renderMessages(); return; }
             const pw = prompt('输入神奇小密码！🔮');
-            if (pw === ADMIN_PASSWORD) { isAdminMode = true; currentPage = 1; renderMessages(); showToast('管理模式已开启，显示所有留言'); }
-            else if (pw) { alert('密码错误'); }
+            if (!pw) return;
+            const inputHash = await hashPassword(pw);
+            if (inputHash === ADMIN_PASSWORD_HASH) { isAdminMode = true; currentPage = 1; renderMessages(); showToast('管理模式已开启，显示所有留言'); }
+            else { alert('密码错误'); }
         }
 
         // Clear messages from Firestore

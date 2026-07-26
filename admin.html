@@ -44,6 +44,43 @@
 </head>
 <body class="min-h-screen flex flex-col">
 
+    <!-- ========== 登录验证 ========== -->
+    <div id="loginGate" style="position:fixed;inset:0;z-index:99999;background:#2c2a27;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+        <div style="text-align:center;">
+            <div style="color:#fff;font-size:48px;font-weight:300;letter-spacing:0.1em;margin-bottom:8px;">zᶻ</div>
+            <div style="color:rgba(255,255,255,0.4);font-size:12px;letter-spacing:0.3em;text-transform:uppercase;">Admin Console</div>
+        </div>
+        <input id="loginPwd" type="password" placeholder="输入密码"
+               style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#fff;padding:10px 20px;border-radius:4px;width:240px;text-align:center;font-size:14px;letter-spacing:0.2em;outline:none;"
+               onkeydown="if(event.key==='Enter')checkPwd()">
+        <button onclick="checkPwd()"
+                style="background:rgba(255,255,255,0.12);border:none;color:rgba(255,255,255,0.7);padding:8px 32px;border-radius:4px;cursor:pointer;font-size:12px;letter-spacing:0.2em;transition:all 0.2s;"
+                onmouseover="this.style.background='rgba(255,255,255,0.2)';this.style.color='#fff'"
+                onmouseout="this.style.background='rgba(255,255,255,0.12)';this.style.color='rgba(255,255,255,0.7)'">进入后台</button>
+        <div id="loginError" style="color:#e07060;font-size:11px;display:none;">密码错误</div>
+    </div>
+    <script>
+    async function checkPwd() {
+        const pw = document.getElementById('loginPwd').value;
+        const encoder = new TextEncoder();
+        const data = encoder.encode(pw + 'roy_zhao_salt_2026');
+        const hash = await crypto.subtle.digest('SHA-256', data);
+        const inputHash = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+        const storedHash = 'cd87789d49b1782efac3c8cc0d828145371588d8ca196cff4cfcaa6a72d571ef';
+        if (inputHash === storedHash) {
+            document.getElementById('loginGate').style.display = 'none';
+            sessionStorage.setItem('admin_authed', '1');
+        } else {
+            document.getElementById('loginError').style.display = 'block';
+            document.getElementById('loginPwd').value = '';
+            document.getElementById('loginPwd').focus();
+        }
+    }
+    if (sessionStorage.getItem('admin_authed') === '1') {
+        document.getElementById('loginGate').style.display = 'none';
+    }
+    </script>
+
     <!-- ========== TOP BAR ========== -->
     <header class="bg-[#2c2a27] text-white px-6 py-2.5 flex items-center justify-between sticky top-0 z-50 shadow-lg">
         <div class="flex items-center gap-4">
@@ -82,6 +119,9 @@
         </button>
         <button class="tab-btn px-4 py-2.5 text-sm tracking-wide rounded-t-lg whitespace-nowrap" data-tab="messages" onclick="switchTab('messages')">
             <i class="fa-solid fa-envelope mr-1.5"></i> 留言管理
+        </button>
+        <button class="tab-btn px-4 py-2.5 text-sm tracking-wide rounded-t-lg whitespace-nowrap" data-tab="destinations" onclick="switchTab('destinations')">
+            <i class="fa-solid fa-map-location-dot mr-1.5"></i> 目的地 <span id="destCountBadge" class="text-[10px] bg-gray-200 rounded-full px-1.5 py-0.5 ml-0.5">3</span>
         </button>
     </nav>
 
@@ -168,9 +208,10 @@
                         <div><label class="label-sm">底片</label><input class="input-field" id="about-film" placeholder="Portra 160 / Kodak 5219"></div>
                         <div><label class="label-sm">地区</label><input class="input-field" id="about-location" placeholder="深圳 Shenzhen"></div>
                     </div>
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-3 gap-3">
                         <div><label class="label-sm">Email</label><input class="input-field" id="about-email"></div>
                         <div><label class="label-sm">微信</label><input class="input-field" id="about-wechat"></div>
+                        <div><label class="label-sm">学校</label><input class="input-field" id="about-school"></div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div><label class="label-sm">头像图片路径</label><input class="input-field" id="about-portrait"></div>
@@ -190,10 +231,11 @@
                         <h3 class="text-xl font-light text-[#2c2a27]">关于我</h3>
                         <div class="w-8 h-[1px] bg-gray-300 my-3"></div>
                         <p class="text-sm text-gray-700" id="preview-about-intro">自我介绍...</p>
-                        <div class="grid grid-cols-3 gap-3 mt-4 pt-4 border-t text-xs">
+                        <div class="grid grid-cols-4 gap-3 mt-4 pt-4 border-t text-xs">
                             <div><span class="text-gray-400">设备</span><br><span class="font-medium" id="preview-about-equip">-</span></div>
                             <div><span class="text-gray-400">底片</span><br><span class="font-medium" id="preview-about-film">-</span></div>
                             <div><span class="text-gray-400">地区</span><br><span class="font-medium" id="preview-about-location">-</span></div>
+                            <div><span class="text-gray-400">学校</span><br><span class="font-medium" id="preview-about-school">-</span></div>
                         </div>
                     </div>
                 </div>
@@ -227,7 +269,6 @@
                 </div>
             </div>
         </div>
-    </main>
 
         <!-- ===== MESSAGES TAB ===== -->
         <div id="tab-messages" class="tab-content" style="display:none">
@@ -243,6 +284,20 @@
             </div>
             <div id="messagesList" class="space-y-3">
                 <div class="text-center text-gray-400 py-8">点击「刷新」加载留言...</div>
+            </div>
+        </div>
+
+        <!-- ===== DESTINATIONS TAB ===== -->
+        <div id="tab-destinations" class="tab-content" style="display:none">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div class="flex items-center gap-3">
+                    <h3 class="font-medium text-sm tracking-wide">目的地管理</h3>
+                    <span class="text-xs text-gray-400"><span id="destCount">3</span> 个目的地</span>
+                </div>
+                <button onclick="addDestination()" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> 添加目的地</button>
+            </div>
+            <div id="destinationsEditor" class="space-y-3">
+                <!-- Dynamically rendered -->
             </div>
         </div>
     </main>
@@ -268,6 +323,7 @@ const db = firebase.firestore();
 
 // ========== DATA STORE ==========
 let photos = [];
+let destinations = [];
 let heroData = {};
 let aboutData = {};
 let gbData = {};
@@ -275,31 +331,43 @@ let saveTimeout = null;
 
 const DEFAULTS = {
     photos: [
-        { id:1, title:"木雅措垭口", category:"landscape", src:"images/木雅措垭口1.jpg", film:"Digital", camera:"Nikon Z5", aperture:"f/8.0", shutter:"1/250s", focal:"24-200mm", location:"四川 · 木雅措垭口", desc:"川西高原的垭口之上，经幡在稀薄的空气里猎猎作响。远处的雪山沉默如谜。" },
-        { id:2, title:"禾木晨光", category:"landscape", src:"images/URC_2245.jpg", film:"Digital", camera:"Nikon Z7Ⅱ", aperture:"f/8.0", shutter:"1/125s", focal:"24-200mm", location:"新疆 · 禾木", desc:"清晨第一缕光越过山脊，落在雪原上。" },
-        { id:3, title:"雪岭之间", category:"landscape", src:"images/URC_2558.jpg", film:"Digital", camera:"Nikon Z7Ⅱ", aperture:"f/5.6", shutter:"1/500s", focal:"24-200mm", location:"新疆 · 阿勒泰", desc:"越野车在雪原上划出一道弧线。" },
-        { id:4, title:"日照金山", category:"landscape", src:"images/URC_2624.jpg", film:"Digital", camera:"Nikon Z7Ⅱ", aperture:"f/8.0", shutter:"1/250s", focal:"24-200mm", location:"新疆 · 阿勒泰", desc:"日落时分的五分钟奇迹。" },
-        { id:5, title:"蓝调村落", category:"landscape", src:"images/URC_3014.jpg", film:"Digital", camera:"Nikon Z7Ⅱ", aperture:"f/4.0", shutter:"1/30s", focal:"24-200mm", location:"新疆 · 禾木", desc:"蓝调时刻的禾木。" },
-        { id:6, title:"HDR 光影实验", category:"street", src:"images/ZRH_4596-HDR.jpg", film:"Digital", camera:"Nikon Z5", aperture:"f/5.6", shutter:"1/60s", focal:"24-200mm", location:"深圳", desc:"高动态范围下的光影博弈。" },
-        { id:7, title:"暗调叙事", category:"street", src:"images/ZRH_5480-已增强-NR.jpg", film:"Digital", camera:"Nikon Z5", aperture:"f/2.8", shutter:"1/125s", focal:"24-200mm", location:"深圳", desc:"暗部降噪后的画面。" },
-        { id:8, title:"日常切片", category:"portrait", src:"images/DSC_1827.jpg", film:"Digital", camera:"Nikon Z5", aperture:"f/2.0", shutter:"1/250s", focal:"50mm", location:"深圳", desc:"平凡生活里的某个瞬间。" }
+        { id:1, title:'木雅措垭口', category:'landscape', src:'images/木雅措垭口1.jpg', film:'Digital', camera:'Nikon Z5', aperture:'f/8.0', shutter:'1/250s', focal:'24-200mm', location:'四川 · 木雅措垭口', desc:'川西高原的垭口之上，经幡在稀薄的空气里猎猎作响。远处的雪山沉默如谜。' },
+        { id:2, title:'初到禾木', category:'landscape', src:'images/URC_2245.jpg', film:'Digital', camera:'Nikon Z7Ⅱ', aperture:'f/1.8', shutter:'1/400s', focal:'35mm', location:'新疆 · 禾木', desc:'傍晚最后一缕光越过山脊，落在雪原上。' },
+        { id:3, title:'雪岭之间', category:'landscape', src:'images/URC_2558.jpg', film:'Digital', camera:'Nikon Z7Ⅱ', aperture:'f/5.6', shutter:'1/500s', focal:'24-200mm', location:'新疆 · 阿勒泰', desc:'越野车在雪原上划出一道弧线。' },
+        { id:4, title:'前往', category:'landscape', src:'images/URC_2624.jpg', film:'Digital', camera:'Nikon Z7Ⅱ', aperture:'f/1.8', shutter:'1/8000s', focal:'35mm', location:'新疆 · 伊犁', desc:'飞奔在G30国道' },
+        { id:5, title:'赛湖蓝调', category:'landscape', src:'images/URC_3014.jpg', film:'Digital', camera:'Nikon Z7Ⅱ', aperture:'f/1.8', shutter:'1/30s', focal:'35mm', location:'新疆 · 禾木', desc:'天色渐晚，我们飞驰在赛里木湖畔' },
+        { id:6, title:'涟漪', category:'street', src:'images/ZRH_4596-HDR.jpg', film:'Digital', camera:'Nikon Z5', aperture:'f/1.8', shutter:'1/8000s', focal:'35mm', location:'深圳 · 深圳湾公园', desc:'宁静' },
+        { id:7, title:'深圳湾', category:'street', src:'images/ZRH_5480-已增强-NR.jpg', film:'Digital', camera:'Nikon Z5', aperture:'f/4', shutter:'1/125s', focal:'24-200mm', location:'深圳 · 大南山', desc:'第一次爬大南山，风好大！' },
+        { id:8, title:'扎尕那日出', category:'portrait', src:'images/DSC_1827.jpg', film:'Digital', camera:'Nikon Z5', aperture:'f/16', shutter:'1/500s', focal:'24mm', location:'甘南藏族自治州 · 扎尕那', desc:'扎尕那的山太高，早上只看见高耸的山顶拉下长长的影子' },
+        { id:9, title:'生命力', category:'landscape', src:'images/生命力.JPG', film:'Digital', camera:'Nikon Z5', aperture:'f/4', shutter:'1/2000s', focal:'35mm', location:'四川 · 射洪', desc:'春天到了！🌱' },
+        { id:10, title:'夏天的傍晚', category:'landscape', src:'images/SZX_47791.JPG', film:'Kodak 5219', camera:'Nikon FE2', aperture:'f/5.6', shutter:'1/125s', focal:'35mm', location:'深圳', desc:'' },
+        { id:11, title:'出门', category:'landscape', src:'images/URC_2364.jpg', film:'Digital', camera:'Nikon Z7Ⅱ', aperture:'f/5.6', shutter:'1/125s', focal:'24-200mm', location:'新疆 · 禾木', desc:'刚刚走出小木屋，天正在亮' },
+        { id:12, title:'山脉连绵', category:'landscape', src:'images/URC_1629.jpg', film:'Digital', camera:'Nikon Z7Ⅱ', aperture:'f/5.6', shutter:'1/125s', focal:'24-200mm', location:'新疆', desc:'前往乌鲁木齐的路上' },
+        { id:13, title:'木雅贡噶', category:'landscape', src:'images/Live_20250804081956996.jpeg', film:'Digital', camera:'Nikon Z5', aperture:'f/8.0', shutter:'1/120s', focal:'50mm', location:'甘孜藏族自治州', desc:'' },
+        { id:14, title:'欢畅的风', category:'landscape', src:'images/IMG_2028.jpeg', film:'Digital', camera:'iPhone 15 Pro', aperture:'f/1.8', shutter:'1/50s', focal:'6.765mm', location:'甘孜藏族自治州', desc:'' },
+        { id:15, title:'周末', category:'street', src:'images/SZX_3853haha.jpg', film:'Digital', camera:'Nikon Z7Ⅱ', aperture:'f/1.8', shutter:'1/1250s', focal:'35mm', location:'深圳大学', desc:'' }
     ],
     hero: {
         tagZh:'禾木 · 阿勒泰', tagEn:'Hemu · Altay',
         headingZh:'零下二十度<br>等一场日出', headingEn:'Waiting for Sunrise<br>at -20°C',
-        quoteZh:'二月的禾木村，凌晨六点，气温零下二十度。我架好三脚架，在及膝的雪地里等了一个多小时。鼻涕冻成了冰，手指在快门键上几乎没有知觉。然后天边开始泛光——先是深蓝，再是粉紫，最后整片天空被金色的晨光点燃。那一刻所有的冷都值得了。',
-        quoteEn:'February in Hemu. 6 a.m., -20°C. I set up my tripod and waited in knee-deep snow for over an hour. My breath crystallized, fingers went numb on the shutter. Then the horizon began to glow. Every frozen second was worth it.',
+        quoteZh:'二月的禾木村，早上八点，气温零下二十五度。架好三脚架，在雪地里等了一个多小时。鼻涕冻成了冰，手指在快门键上几乎没有知觉。然后天边开始泛光——深蓝，粉紫，直到整片天空被金色的晨光点燃。那一刻所有的冷都值得了。',
+        quoteEn:'February in Hemu. 8 a.m., -25°C. I set up my tripod and waited in knee-deep snow for over an hour. My breath crystallized, fingers went numb on the shutter. Then the horizon began to glow. Every frozen second was worth it.',
         src:'images/URC_2374.jpg', location:'#01 禾木村 / 阿勒泰地区', gear:'Nikon Z7Ⅱ 24-200mm F4-6.3'
     },
     about: {
-        introZh:'你好，我是<span class="text-[#2c2a27] font-semibold">赵润涵</span>。',
+        introZh:'大家好，我是<span class="text-[#2c2a27] font-semibold">赵润涵</span>。',
         introEn:'Hi, I\'m <span class="text-[#2c2a27] font-semibold">Roy Zhao</span>.',
         equip:'Nikon Z7Ⅱ / Nikon FE2', film:'Portra 160 / Kodak 5219', location:'深圳 Shenzhen',
-        email:'roy_zrh@foxmail.com', wechat:'royzrh',
+        email:'roy_zrh@foxmail.com', wechat:'royzrh', school:'深圳大学',
         portrait:'images/ROY_8128_01.jpg', portraitLabel:'Self Portrait / Nikon Z5',
         douyin:'https://v.douyin.com/ortI32aj29M/', xhs:'https://xhslink.com/m/31Yz5FdEYJM', weibo:'https://m.weibo.cn/u/6174044607'
     },
-    guestbook: { tagZh:'有什么想对我说的吗', tagEn:'Leave me a note', headingZh:'留影簿', headingEn:'Guestbook' }
+    guestbook: { tagZh:'有什么想对我说的吗', tagEn:'Leave me a note', headingZh:'留影簿', headingEn:'Guestbook' },
+    destinations: [
+        { id:'gannan', nameZh:'甘南', nameEn:'Gannan', dateZh:'2022.08.06', dateEn:'Aug 6, 2022', cover:'images/DSC_1827.jpg', filter:'甘南', contentZh:'<p style="color:rgba(255,255,255,0.4); font-size:18px; letter-spacing:0.15em; margin-top:40px;">即将更新～</p>', contentEn:'<p style="color:rgba(255,255,255,0.4); font-size:18px; letter-spacing:0.15em; margin-top:40px;">Coming soon~</p>' },
+        { id:'garze', nameZh:'甘孜', nameEn:'Garze', dateZh:'2025.08.03', dateEn:'Aug 3, 2025', cover:'images/木雅措垭口1.jpg', filter:'甘孜', contentZh:'<p style="color:rgba(255,255,255,0.4); font-size:18px; letter-spacing:0.15em; margin-top:40px;">即将更新～</p>', contentEn:'<p style="color:rgba(255,255,255,0.4); font-size:18px; letter-spacing:0.15em; margin-top:40px;">Coming soon~</p>' },
+        { id:'xinjiang', nameZh:'新疆', nameEn:'Xinjiang', dateZh:'2026.01.30 - 02.05', dateEn:'Jan 30 - Feb 5, 2026', cover:'images/URC_2245.jpg', filter:'新疆', contentZh:'<p style="color:rgba(255,255,255,0.4); font-size:18px; letter-spacing:0.15em; margin-top:40px;">即将更新～</p>', contentEn:'<p style="color:rgba(255,255,255,0.4); font-size:18px; letter-spacing:0.15em; margin-top:40px;">Coming soon~</p>' }
+    ]
 };
 
 // ========== INIT ==========
@@ -309,6 +377,7 @@ function loadData() {
         try {
             const data = JSON.parse(saved);
             photos = data.photos || DEFAULTS.photos;
+            destinations = data.destinations || DEFAULTS.destinations;
             heroData = data.hero || DEFAULTS.hero;
             aboutData = data.about || DEFAULTS.about;
             gbData = data.guestbook || DEFAULTS.guestbook;
@@ -318,10 +387,12 @@ function loadData() {
     }
     fillForms();
     renderGalleryEditor();
+    renderDestinationsEditor();
 }
 
 function loadDefaults() {
     photos = JSON.parse(JSON.stringify(DEFAULTS.photos));
+    destinations = JSON.parse(JSON.stringify(DEFAULTS.destinations));
     heroData = JSON.parse(JSON.stringify(DEFAULTS.hero));
     aboutData = JSON.parse(JSON.stringify(DEFAULTS.about));
     gbData = JSON.parse(JSON.stringify(DEFAULTS.guestbook));
@@ -338,7 +409,7 @@ function fillForms() {
     // About
     set('about-intro-zh', aboutData.introZh); set('about-intro-en', aboutData.introEn);
     set('about-equip', aboutData.equip); set('about-film', aboutData.film); set('about-location', aboutData.location);
-    set('about-email', aboutData.email); set('about-wechat', aboutData.wechat);
+    set('about-email', aboutData.email); set('about-wechat', aboutData.wechat); set('about-school', aboutData.school);
     set('about-portrait', aboutData.portrait); set('about-portrait-label', aboutData.portraitLabel);
     set('about-douyin', aboutData.douyin); set('about-xhs', aboutData.xhs); set('about-weibo', aboutData.weibo);
     // Guestbook
@@ -366,6 +437,8 @@ function updateAboutPreview() {
     if (film) film.textContent = document.getElementById('about-film')?.value || '-';
     const loc = document.getElementById('preview-about-location');
     if (loc) loc.textContent = document.getElementById('about-location')?.value || '-';
+    const school = document.getElementById('preview-about-school');
+    if (school) school.textContent = document.getElementById('about-school')?.value || '-';
 }
 function updateGbPreview() {
     const tag = document.getElementById('preview-gb-tag');
@@ -535,6 +608,112 @@ function dragEnd(e) {
     dragIndex = null;
 }
 
+// ========== DESTINATIONS CRUD ==========
+function renderDestinationsEditor() {
+    const container = document.getElementById('destinationsEditor');
+    if (!container) return;
+    document.getElementById('destCount').textContent = destinations.length;
+    const badge = document.getElementById('destCountBadge');
+    if (badge) badge.textContent = destinations.length;
+
+    if (!destinations.length) {
+        container.innerHTML = '<div class="text-center text-gray-400 py-8">暂无目的地，点击上方按钮添加</div>';
+        return;
+    }
+
+    container.innerHTML = destinations.map((d, i) => `
+        <div class="photo-card bg-white border rounded p-3" draggable="true" data-index="${i}"
+             ondragstart="dragStartDest(event,${i})" ondragover="dragOverDest(event)" ondragleave="dragLeaveDest(event)" ondrop="dropDest(event,${i})" ondragend="dragEndDest(event)">
+            <div class="flex items-start gap-3">
+                <div class="flex flex-col items-center gap-1 text-gray-400 text-xs pt-2">
+                    <button onclick="moveDest(${i},-1)" class="hover:text-gray-700"><i class="fa-solid fa-chevron-up"></i></button>
+                    <button onclick="moveDest(${i},1)" class="hover:text-gray-700"><i class="fa-solid fa-chevron-down"></i></button>
+                    <span class="text-[10px]">#${i+1}</span>
+                </div>
+                <img src="${d.cover||''}" alt="" class="w-20 h-16 object-cover rounded border" onerror="this.style.display='none'">
+                <div class="flex-1 grid grid-cols-2 md:grid-cols-3 gap-2">
+                    ${field('名称(中)', 'nameZh', i, d.nameZh)}
+                    ${field('名称(英)', 'nameEn', i, d.nameEn)}
+                    ${field('日期(中)', 'dateZh', i, d.dateZh)}
+                    ${field('日期(英)', 'dateEn', i, d.dateEn)}
+                    ${field('封面图', 'cover', i, d.cover)}
+                    ${field('筛选词', 'filter', i, d.filter)}
+                </div>
+                <div class="flex flex-col gap-1">
+                    <button onclick="duplicateDest(${i})" class="text-xs text-gray-400 hover:text-blue-600" title="复制"><i class="fa-solid fa-copy"></i></button>
+                    <button onclick="deleteDest(${i})" class="text-xs text-gray-400 hover:text-red-600" title="删除"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 gap-2 mt-2">
+                <div><label class="label-sm">游记内容 (中文) — HTML</label><textarea class="input-field" rows="3" onchange="updateDest(${i},'contentZh',this.value)">${escapeHtml(d.contentZh||'')}</textarea></div>
+                <div><label class="label-sm">游记内容 (英文) — HTML</label><textarea class="input-field" rows="3" onchange="updateDest(${i},'contentEn',this.value)">${escapeHtml(d.contentEn||'')}</textarea></div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateDest(index, field, value) {
+    destinations[index][field] = value;
+    scheduleSave();
+}
+
+function addDestination() {
+    destinations.push({
+        id:'new_' + Date.now(), nameZh:'新目的地', nameEn:'New Destination',
+        dateZh:'', dateEn:'', cover:'images/', filter:'',
+        contentZh:'<p>即将更新～</p>', contentEn:'<p>Coming soon~</p>'
+    });
+    renderDestinationsEditor();
+    scheduleSave();
+    const last = document.getElementById('destinationsEditor').lastElementChild;
+    if (last) { last.scrollIntoView({ behavior:'smooth' }); last.classList.add('ring-2','ring-blue-300'); setTimeout(()=>last.classList.remove('ring-2','ring-blue-300'),2000); }
+}
+
+function deleteDest(index) {
+    if (!confirm('删除目的地：' + (destinations[index].nameZh || '未命名') + '？')) return;
+    destinations.splice(index, 1);
+    renderDestinationsEditor();
+    scheduleSave();
+}
+
+function duplicateDest(index) {
+    const orig = destinations[index];
+    const copy = JSON.parse(JSON.stringify(orig));
+    copy.id = 'dup_' + Date.now();
+    copy.nameZh = (copy.nameZh||'') + ' (副本)';
+    copy.nameEn = (copy.nameEn||'') + ' (copy)';
+    destinations.splice(index + 1, 0, copy);
+    renderDestinationsEditor();
+    scheduleSave();
+}
+
+function moveDest(index, dir) {
+    const newIndex = index + dir;
+    if (newIndex < 0 || newIndex >= destinations.length) return;
+    [destinations[index], destinations[newIndex]] = [destinations[newIndex], destinations[index]];
+    renderDestinationsEditor();
+    scheduleSave();
+}
+
+let dragIndexDest = null;
+function dragStartDest(e, i) { dragIndexDest = i; e.target.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
+function dragOverDest(e) { e.preventDefault(); e.target.closest('.photo-card')?.classList.add('drag-over'); }
+function dragLeaveDest(e) { e.target.closest('.photo-card')?.classList.remove('drag-over'); }
+function dropDest(e, i) {
+    e.preventDefault();
+    document.querySelectorAll('#destinationsEditor .photo-card').forEach(c=>c.classList.remove('drag-over','dragging'));
+    if (dragIndexDest === null || dragIndexDest === i) return;
+    const [item] = destinations.splice(dragIndexDest, 1);
+    destinations.splice(i, 0, item);
+    dragIndexDest = null;
+    renderDestinationsEditor();
+    scheduleSave();
+}
+function dragEndDest(e) {
+    document.querySelectorAll('#destinationsEditor .photo-card').forEach(c=>c.classList.remove('drag-over','dragging'));
+    dragIndexDest = null;
+}
+
 // ========== SAVE & EXPORT ==========
 function collectData() {
     return {
@@ -557,6 +736,7 @@ function collectData() {
             location: document.getElementById('about-location')?.value || '',
             email: document.getElementById('about-email')?.value || '',
             wechat: document.getElementById('about-wechat')?.value || '',
+            school: document.getElementById('about-school')?.value || '',
             portrait: document.getElementById('about-portrait')?.value || '',
             portraitLabel: document.getElementById('about-portrait-label')?.value || '',
             douyin: document.getElementById('about-douyin')?.value || '',
@@ -569,7 +749,8 @@ function collectData() {
             headingZh: document.getElementById('gb-heading-zh')?.value || '',
             headingEn: document.getElementById('gb-heading-en')?.value || ''
         },
-        photos: photos
+        photos: photos,
+        destinations: destinations
     };
 }
 
@@ -608,6 +789,7 @@ function resetAll() {
     loadDefaults();
     fillForms();
     renderGalleryEditor();
+    renderDestinationsEditor();
     showToast('已重置为默认值');
 }
 
@@ -618,11 +800,13 @@ function importFromPage() {
     try {
         const data = JSON.parse(raw);
         photos = data.photos || DEFAULTS.photos;
+        destinations = data.destinations || DEFAULTS.destinations;
         heroData = data.hero || DEFAULTS.hero;
         aboutData = data.about || DEFAULTS.about;
         gbData = data.guestbook || DEFAULTS.guestbook;
         fillForms();
         renderGalleryEditor();
+        renderDestinationsEditor();
         showToast('数据已导入 ✅');
     } catch(e) { showToast('导入失败'); }
 }

@@ -233,7 +233,7 @@ cd "/Users/mac/项目/web" && cp "web se.html" index.html && git add index.html 
 | `// ========== Admin Data Bridge` | admin 数据同步逻辑 |
 | `buildConnectorSVG` | 方波时间轴连线 |
 | `openDestination` | 目的地遮罩打开 |
-| `Zrh20060727` | 管理员密码 |
+| `ADMIN_PASSWORD_HASH` | 管理员密码（SHA-256 哈希存储） |
 
 ---
 
