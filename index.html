@@ -5,17 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="images/favicon.png">
     <title>Roy Zhao / 赵润涵</title>
+    <!-- 跟随系统外观：Safari / Chrome 工具栏配色 -->
+    <meta name="theme-color" content="#ffffff">
     <!-- 主题初始化：必须在渲染前执行，避免深色模式闪白 -->
     <script>
         (function () {
-            try {
-                var saved = localStorage.getItem('roy_zhao_theme');
-                var dark = saved ? saved === 'dark'
-                                 : window.matchMedia('(prefers-color-scheme: dark)').matches;
-                document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-            } catch (e) {
-                document.documentElement.setAttribute('data-theme', 'light');
+            var mq = window.matchMedia('(prefers-color-scheme: dark)');
+
+            function apply(isDark) {
+                document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+                var meta = document.querySelector('meta[name="theme-color"]');
+                if (meta) meta.setAttribute('content', isDark ? '#121110' : '#ffffff');
             }
+
+            apply(mq.matches);
+
+            // 系统外观变化时实时跟随，无需刷新
+            var onChange = function (e) { apply(e.matches); };
+            if (mq.addEventListener) mq.addEventListener('change', onChange);
+            else if (mq.addListener) mq.addListener(onChange); // iOS 13 Safari 兜底
         })();
     </script>
     <!-- Tailwind CSS -->
@@ -31,6 +39,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <style>
+        html {
+            color-scheme: light; /* 基线；深色下由 html[data-theme="dark"] 覆盖 */
+        }
+
         body {
             font-family: 'Times New Roman', Times, 'Noto Serif SC', 'SimSun', 'Songti SC', serif;
             background-color: #ffffff; /* Pure white background */
@@ -708,22 +720,6 @@
             box-shadow: 0 10px 30px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
         }
 
-        /* ---------- 主题切换按钮 ---------- */
-        #themeToggle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 2rem;
-            height: 2rem;
-            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-        }
-        /* 深色模式下按钮点亮，作为当前状态反馈（导航栏本身始终是深色的） */
-        html[data-theme="dark"] #themeToggle {
-            background-color: rgba(255, 255, 255, 0.14);
-            border-color: rgba(255, 255, 255, 0.55);
-            color: #fff;
-        }
-
 
         /* ============ 自定义组件的深色适配 ============ */
 
@@ -868,7 +864,6 @@
                 <button onclick="scrollToSection('guestbook-section')" class="hover:text-gray-300 text-white transition-colors border-b border-transparent hover:border-white pb-1" data-i18n="nav.guestbook">留言</button>
                 <button onclick="scrollToSection('about-section')" class="hover:text-gray-300 text-white transition-colors border-b border-transparent hover:border-white pb-1" data-i18n="nav.about">关于</button>
                 <button onclick="toggleLang()" class="text-sm tracking-[0.05em] text-white/70 hover:text-white transition-colors border border-white/30 rounded px-2 py-1" data-i18n="nav.lang">中</button>
-                <button onclick="toggleTheme()" id="themeToggle" title="切换深色 / 浅色模式" aria-label="切换深色 / 浅色模式" class="text-sm text-white/70 hover:text-white transition-colors border border-white/30 rounded"><i class="fa-solid fa-circle-half-stroke"></i></button>
             </nav>
         </div>
     </header>
@@ -1378,17 +1373,6 @@
 
         function t(key) {
             return (i18n[key] && i18n[key][currentLang]) || key;
-        }
-
-        // ==================== 深色模式 ====================
-        function applyTheme(theme) {
-            document.documentElement.setAttribute('data-theme', theme);
-            try { localStorage.setItem('roy_zhao_theme', theme); } catch (e) {}
-        }
-
-        function toggleTheme() {
-            const current = document.documentElement.getAttribute('data-theme');
-            applyTheme(current === 'dark' ? 'light' : 'dark');
         }
 
         function toggleLang() {
