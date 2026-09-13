@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="images/favicon.png">
     <title>Roy Zhao / 赵润涵</title>
+    <!-- 主题初始化：必须在渲染前执行，避免深色模式闪白 -->
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('roy_zhao_theme');
+                var dark = saved ? saved === 'dark'
+                                 : window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'light');
+            }
+        })();
+    </script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Firebase SDK -->
@@ -563,6 +576,214 @@
         90%  { opacity: 0.6; }
         100% { opacity: 0; transform: translateY(105vh) translateX(var(--drift)) rotate(var(--spin)); }
     }
+
+        /* ==================================================================
+           深色模式
+           通过 html[data-theme="dark"] 提高一级特异性，覆盖 Tailwind CDN
+           动态生成的任意值颜色类，因此 JS 动态渲染的卡片同样生效。
+           ================================================================== */
+        html[data-theme="dark"] {
+            --dk-bg:        #121110;
+            --dk-surface:   #1b1a17;
+            --dk-surface-2: #23211d;
+            --dk-surface-3: #2b2823;
+            --dk-border:    #302d28;
+            --dk-border-2:  #423e37;
+            --dk-text:      #e9e5dd;
+            --dk-text-2:    #b3aca1;
+            --dk-text-3:    #8b8478;
+            --dk-muted:     #6f6960;
+            color-scheme: dark;
+        }
+
+        html[data-theme="dark"] body {
+            background-color: var(--dk-bg);
+            color: var(--dk-text);
+        }
+
+        /* ---------- 滚动条 ---------- */
+        html[data-theme="dark"] ::-webkit-scrollbar-track { background: #171614; }
+        html[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #3d3933; }
+        html[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: #55504a; }
+
+        /* ---------- 暗角在深色下减弱 ---------- */
+        html[data-theme="dark"] .vignette {
+            background: radial-gradient(circle, transparent 55%, rgba(0,0,0,0.4) 150%);
+        }
+
+        /* ================= 文字色 ================= */
+        html[data-theme="dark"] .text-\[\#2c2a27\]          { color: var(--dk-text); }
+        html[data-theme="dark"] .text-\[\#5c554a\]          { color: var(--dk-text-2); }
+        html[data-theme="dark"] .text-\[\#5c554a\]\/80      { color: var(--dk-text-2); }
+        html[data-theme="dark"] .text-\[\#8c8273\]          { color: #a89e8c; }
+        html[data-theme="dark"] .text-\[\#a38b6c\]          { color: #c9ab84; }
+        html[data-theme="dark"] .text-\[\#3d3326\]          { color: #d5cdc0; }
+        html[data-theme="dark"] .text-\[\#a39b90\]          { color: var(--dk-text-3); }
+        html[data-theme="dark"] .text-\[\#737578\]          { color: #9a9a9a; }
+        html[data-theme="dark"] .text-\[\#f7f4eb\]          { color: #f2efe7; }
+        /* 蓝晒留言卡 */
+        html[data-theme="dark"] .text-\[\#1c2e42\]          { color: #cfe0f0; }
+        html[data-theme="dark"] .text-\[\#4b6a8a\]          { color: #8fb4d6; }
+
+        /* ================= 边框色 ================= */
+        html[data-theme="dark"] .border-\[\#e2dcd0\]        { border-color: var(--dk-border); }
+        html[data-theme="dark"] .border-\[\#c5beb4\]        { border-color: var(--dk-border-2); }
+        html[data-theme="dark"] .border-\[\#d6cfc2\]        { border-color: #3a3730; }
+        html[data-theme="dark"] .border-\[\#d8cbb5\]        { border-color: #453f34; }
+        html[data-theme="dark"] .border-\[\#c5d0db\]        { border-color: #35506b; }
+        html[data-theme="dark"] .border-\[\#8c8e91\]\/30    { border-color: rgba(255,255,255,0.14); }
+        html[data-theme="dark"] .border-\[\#8c8e91\]\/20    { border-color: rgba(255,255,255,0.10); }
+
+        /* 主按钮边框在深色下反相为浅色 */
+        html[data-theme="dark"] .border-\[\#2c2a27\]        { border-color: var(--dk-text); }
+        html[data-theme="dark"] .hover\:border-\[\#2c2a27\]:hover { border-color: var(--dk-text); }
+        /* 反相按钮：浅底 + 深字 */
+        html[data-theme="dark"] .bg-\[\#2c2a27\]            { background-color: var(--dk-text); }
+        html[data-theme="dark"] .bg-\[\#2c2a27\].text-white,
+        html[data-theme="dark"] .bg-\[\#2c2a27\] .text-white { color: #171614; }
+        html[data-theme="dark"] .hover\:bg-\[\#5c554a\]:hover { background-color: #cdc7bc; }
+        /* 分隔细线 */
+        html[data-theme="dark"] .bg-\[\#2c2a27\]\/50        { background-color: rgba(233,229,221,0.30); }
+
+        /* ================= 背景色 ================= */
+        html[data-theme="dark"] .bg-\[\#f5f4f0\]            { background-color: #171614; }  /* 底片册区块 */
+        html[data-theme="dark"] .bg-\[\#fafaf9\]            { background-color: var(--dk-surface); }
+        html[data-theme="dark"] .bg-\[\#fffdf9\]            { background-color: var(--dk-surface); }
+        html[data-theme="dark"] .bg-\[\#f7f5f0\]            { background-color: var(--dk-surface); }
+        html[data-theme="dark"] .bg-\[\#faf8f5\]            { background-color: var(--dk-surface-2); }
+        html[data-theme="dark"] .bg-\[\#fdf7eb\]            { background-color: #332a1c; }
+        html[data-theme="dark"] .bg-\[\#faf0dc\]            { background-color: #2b2418; }
+        html[data-theme="dark"] .bg-\[\#e8edf2\]            { background-color: #16222e; }
+        html[data-theme="dark"] .bg-\[\#f0f4f8\]            { background-color: #1b2937; }
+        html[data-theme="dark"] .bg-\[\#7c7c7c\]            { background-color: #4a4a4a; }
+        /* 遮罩层（灯箱 / 弹窗） */
+        html[data-theme="dark"] .bg-\[\#737578\]            { background-color: #0d0c0b; }
+        /* 页脚 */
+        html[data-theme="dark"] .bg-\[\#5e6063\]            { background-color: #171614; }
+        /* 底片册卡片图片悬停遮罩 */
+        html[data-theme="dark"] .bg-\[\#2c2a27\]\/15        { background-color: rgba(0,0,0,0.45); }
+        /* 卡片 film/digital 标识 */
+        html[data-theme="dark"] .bg-\[\#9c9c9c\]\/85        { background-color: rgba(255,255,255,0.14); }
+
+        /* ---------- 纯 Tailwind 颜色类 ---------- */
+        html[data-theme="dark"] .bg-white                   { background-color: var(--dk-surface); }
+        html[data-theme="dark"] .bg-stone-100               { background-color: var(--dk-surface-2); }
+        html[data-theme="dark"] .bg-stone-300               { background-color: var(--dk-surface-2); }
+        html[data-theme="dark"] .bg-zinc-200                { background-color: var(--dk-surface-2); }
+        html[data-theme="dark"] .bg-white\/80               { background-color: rgba(27,26,23,0.85); }
+        html[data-theme="dark"] .bg-white\/90               { background-color: rgba(255,255,255,0.08); }
+        html[data-theme="dark"] .bg-white\/95               { background-color: rgba(18,17,16,0.88); }
+        html[data-theme="dark"] .border-gray-200            { border-color: #35322c; }
+        html[data-theme="dark"] .text-gray-300              { color: #6b675f; }
+        html[data-theme="dark"] .hover\:bg-\[\#f5f4f0\]:hover { background-color: var(--dk-surface-2); }
+        html[data-theme="dark"] .hover\:bg-\[\#faf8f5\]:hover { background-color: var(--dk-surface-3); }
+        html[data-theme="dark"] .hover\:bg-black:hover      { background-color: #f2efe7; }
+        html[data-theme="dark"] .hover\:border-black:hover  { border-color: #f2efe7; }
+        html[data-theme="dark"] .hover\:border-\[\#c5beb4\]:hover { border-color: #5a554c; }
+
+        /* ================= 表单控件 ================= */
+        html[data-theme="dark"] .placeholder-\[\#a39b90\]::placeholder { color: var(--dk-muted); }
+        html[data-theme="dark"] .accent-\[\#2c2a27\]        { accent-color: var(--dk-text); }
+        html[data-theme="dark"] input,
+        html[data-theme="dark"] textarea,
+        html[data-theme="dark"] select {
+            color-scheme: dark;
+        }
+
+        /* ================= 照片观感微调 ================= */
+        html[data-theme="dark"] .gallery-card img,
+        html[data-theme="dark"] .film-frame img {
+            filter: brightness(0.94) contrast(1.02);
+        }
+
+        /* 深色下阴影不可见，改用描边区分层次 */
+        html[data-theme="dark"] .shadow-xl,
+        html[data-theme="dark"] .shadow-2xl {
+            box-shadow: 0 10px 30px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04);
+        }
+
+        /* ---------- 主题切换按钮 ---------- */
+        #themeToggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+        /* 深色模式下按钮点亮，作为当前状态反馈（导航栏本身始终是深色的） */
+        html[data-theme="dark"] #themeToggle {
+            background-color: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.55);
+            color: #fff;
+        }
+
+
+        /* ============ 自定义组件的深色适配 ============ */
+
+        /* 目的地时间轴卡片 */
+        html[data-theme="dark"] .tl-card {
+            background: var(--dk-surface);
+            border-color: var(--dk-border);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+        }
+        html[data-theme="dark"] .tl-card:hover {
+            box-shadow: 0 12px 28px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.06);
+        }
+        html[data-theme="dark"] .tl-card .tl-name { color: var(--dk-text); }
+        html[data-theme="dark"] .tl-card .tl-date { color: #a89e8c; }
+        html[data-theme="dark"] .tl-card .tl-hint { color: var(--dk-muted); }
+        html[data-theme="dark"] .tl-dot  { fill: var(--dk-text); stroke: var(--dk-bg); }
+        html[data-theme="dark"] .tl-line { stroke: #5c5548; }
+
+        /* 节日海报遮罩 */
+        html[data-theme="dark"] .holiday-overlay {
+            background: rgba(18, 17, 16, 0.6);
+        }
+        html[data-theme="dark"] .holiday-poster {
+            background: var(--dk-surface);
+            border-color: var(--dk-border);
+            box-shadow:
+                0 4px 24px rgba(0,0,0,0.5),
+                0 20px 60px rgba(0,0,0,0.6);
+        }
+        html[data-theme="dark"] .holiday-poster .poster-title { color: var(--dk-text); }
+        html[data-theme="dark"] .holiday-poster .poster-sub   { color: #a89e8c; }
+        html[data-theme="dark"] .holiday-poster .poster-hint  { color: var(--dk-muted); }
+        html[data-theme="dark"] .holiday-poster .poster-line  { background: #3d3933; }
+
+        /* 生日灯箱 */
+        html[data-theme="dark"] #birthdayLightbox { background: var(--dk-bg); }
+        html[data-theme="dark"] #birthdayLightbox .lb-photo-wrap {
+            background: var(--dk-surface);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.7);
+        }
+
+        /* 目的地详情拼贴网格 */
+        html[data-theme="dark"] .dest-collage-grid { background: var(--dk-surface-2); }
+
+        /* 表单聚焦态 */
+        html[data-theme="dark"] .focus\:border-\[\#2c2a27\]:focus { border-color: var(--dk-text-2); }
+
+
+        /* ============ 遮罩层修正 ============
+           浅色下 #737578 是中灰底，里面直接放白字/白按钮。
+           深色下若压成纯黑，白按钮会被反相成深色，与底色糊在一起。
+           因此：弹窗保持"深灰底"（白字、浅色按钮仍可读），
+           灯箱则用近黑底（看照片更沉）。 */
+        html[data-theme="dark"] .bg-\[\#737578\] { background-color: #3a3733; }
+        html[data-theme="dark"] #lightbox { background-color: #0f0e0d; }
+
+        /* 登录弹窗的白色主按钮在深色下仍保持浅色 */
+        html[data-theme="dark"] #loginModal .bg-white { background-color: var(--dk-text); }
+        html[data-theme="dark"] #loginModal .bg-white.text-\[\#2c2a27\] { color: #171614; }
+        html[data-theme="dark"] #loginModal .hover\:bg-gray-200:hover { background-color: #cdc7bc; }
+
+        /* 留言详情卡在深色遮罩上保持可辨 */
+        html[data-theme="dark"] #messageModal > div > .bg-white {
+            box-shadow: 0 20px 50px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.05);
+        }
+
     </style>
 </head>
 <body class="relative min-h-screen selection:bg-[#2c2a27] selection:text-[#f7f4eb]">
@@ -641,6 +862,7 @@
                 <button onclick="scrollToSection('guestbook-section')" class="hover:text-gray-300 text-white transition-colors border-b border-transparent hover:border-white pb-1" data-i18n="nav.guestbook">留言</button>
                 <button onclick="scrollToSection('about-section')" class="hover:text-gray-300 text-white transition-colors border-b border-transparent hover:border-white pb-1" data-i18n="nav.about">关于</button>
                 <button onclick="toggleLang()" class="text-sm tracking-[0.05em] text-white/70 hover:text-white transition-colors border border-white/30 rounded px-2 py-1" data-i18n="nav.lang">中</button>
+                <button onclick="toggleTheme()" id="themeToggle" title="切换深色 / 浅色模式" aria-label="切换深色 / 浅色模式" class="text-sm text-white/70 hover:text-white transition-colors border border-white/30 rounded"><i class="fa-solid fa-circle-half-stroke"></i></button>
             </nav>
         </div>
     </header>
@@ -1142,6 +1364,17 @@
 
         function t(key) {
             return (i18n[key] && i18n[key][currentLang]) || key;
+        }
+
+        // ==================== 深色模式 ====================
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            try { localStorage.setItem('roy_zhao_theme', theme); } catch (e) {}
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            applyTheme(current === 'dark' ? 'light' : 'dark');
         }
 
         function toggleLang() {
