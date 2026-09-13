@@ -373,7 +373,7 @@
         to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* 留影簿翻页动画 */
+    /* 留言簿翻页动画 */
     #messageBoard.transitioning {
         opacity: 0;
         transform: translateY(6px);
@@ -638,7 +638,7 @@
             <nav class="flex items-center space-x-7 text-base tracking-[0.05em]">
                 <button onclick="scrollToSection('gallery-section')" class="hover:text-gray-300 text-white transition-colors border-b border-transparent hover:border-white pb-1" data-i18n="nav.gallery">底片册</button>
                 <button onclick="scrollToSection('destinations-section')" class="hover:text-gray-300 text-white transition-colors border-b border-transparent hover:border-white pb-1" data-i18n="nav.destinations">目的地</button>
-                <button onclick="scrollToSection('guestbook-section')" class="hover:text-gray-300 text-white transition-colors border-b border-transparent hover:border-white pb-1" data-i18n="nav.guestbook">留影</button>
+                <button onclick="scrollToSection('guestbook-section')" class="hover:text-gray-300 text-white transition-colors border-b border-transparent hover:border-white pb-1" data-i18n="nav.guestbook">留言</button>
                 <button onclick="scrollToSection('about-section')" class="hover:text-gray-300 text-white transition-colors border-b border-transparent hover:border-white pb-1" data-i18n="nav.about">关于</button>
                 <button onclick="toggleLang()" class="text-sm tracking-[0.05em] text-white/70 hover:text-white transition-colors border border-white/30 rounded px-2 py-1" data-i18n="nav.lang">中</button>
             </nav>
@@ -713,7 +713,7 @@
             
             <!-- Section Title -->
             <div class="text-center space-y-3 mb-6">
-                <span class="text-xs uppercase tracking-[0.5em] text-[#8c8273]" data-i18n="gallery.tag">精选作品</span>
+                <span class="text-xs uppercase tracking-[0.5em] text-[#8c8273]" data-i18n="gallery.tag">我的</span>
                 <h3 class="text-2xl md:text-3xl font-light tracking-[0.15em] text-[#2c2a27]" data-i18n="gallery.heading">底片册</h3>
                 <div class="w-8 h-[1px] bg-[#2c2a27]/50 mx-auto"></div>
             </div>
@@ -755,7 +755,7 @@
             <!-- Section Title -->
             <div class="text-center space-y-3 mb-16">
                 <span class="text-xs uppercase tracking-[0.5em] text-[#8c8273]" data-i18n="guestbook.tag">有什么想对我说的吗</span>
-                <h3 class="text-2xl md:text-3xl font-light tracking-[0.15em] text-[#2c2a27]" data-i18n="guestbook.heading">留影簿</h3>
+                <h3 class="text-2xl md:text-3xl font-light tracking-[0.15em] text-[#2c2a27]" data-i18n="guestbook.heading">留言簿</h3>
                 <div class="w-8 h-[1px] bg-[#2c2a27]/50 mx-auto"></div>
             </div>
 
@@ -1094,20 +1094,20 @@
 
         const i18n = {
             'nav.gallery':       { zh: '底片册',        en: 'Gallery' },
-            'nav.guestbook':     { zh: '留影',          en: 'Guestbook' },
+            'nav.guestbook':     { zh: '留言',          en: 'Guestbook' },
             'nav.destinations':  { zh: '目的地',        en: 'Journeys' },
             'nav.about':         { zh: '关于',          en: 'About' },
             'nav.lang':          { zh: 'EN',            en: '中' },
             'hero.tag':          { zh: '禾木 · 阿勒泰', en: 'Hemu · Altay' },
             'hero.heading':      { zh: '零下二十度<br>等一场日出', en: 'Waiting for Sunrise<br>at -20°C' },
             'hero.quote':        { zh: '二月的禾木村，凌晨六点，气温零下二十度。我架好三脚架，在及膝的雪地里等了一个多小时。鼻涕冻成了冰，手指在快门键上几乎没有知觉。然后天边开始泛光——先是深蓝，再是粉紫，最后整片天空被金色的晨光点燃。那一刻所有的冷都值得了。', en: 'February in Hemu. 6 a.m., -20°C. I set up my tripod and waited in knee-deep snow for over an hour. My breath crystallized, fingers went numb on the shutter. Then the horizon began to glow. Every frozen second was worth it.' },
-            'gallery.tag':       { zh: '精选作品',       en: 'Curated Works' },
+            'gallery.tag':       { zh: '我的',           en: 'My Works' },
             'gallery.heading':   { zh: '底片册',         en: 'Archive' },
             'destinations.tag':  { zh: '旅途',          en: 'Itinerary' },
             'destinations.heading': { zh: '目的地',      en: 'Destinations' },
             'destinations.view': { zh: '查看照片',       en: 'View Photos' },
             'guestbook.tag':     { zh: '有什么想对我说的吗', en: 'Leave me a note' },
-            'guestbook.heading': { zh: '留影簿',         en: 'Guestbook' },
+            'guestbook.heading': { zh: '留言簿',         en: 'Guestbook' },
             'guestbook.title':   { zh: '留下墨迹',       en: 'Add Message' },
             'guestbook.name':    { zh: '称呼',           en: 'Name' },
             'guestbook.name_ph': { zh: 'e.g. 拾光者',    en: 'e.g. Light Chaser' },
@@ -1128,7 +1128,7 @@
             'about.location':    { zh: '地区',           en: 'Location' },
             'footer.copy':       { zh: '© 2026 Roy Zhao / 赵润涵. 保留所有权利。', en: '© 2026 Roy Zhao / 赵润涵. All Rights Reserved.' },
             'toast.sent':        { zh: '底片已入显影池，正在暗房成像...', en: 'Note in the developer bath, imaging in progress...' },
-            'toast.cleared':     { zh: '已恢复预设留影簿。', en: 'Guestbook restored to defaults.' },
+            'toast.cleared':     { zh: '已恢复预设留言簿。', en: 'Guestbook restored to defaults.' },
             'confirm.clear':     { zh: '确定要清空所有留言吗？', en: 'Clear all messages? This cannot be undone.' },
             'filter.all':        { zh: '全部',            en: 'All' },
             'filter.digital':    { zh: '数码',            en: 'Digital' },
