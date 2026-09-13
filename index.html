@@ -1137,6 +1137,7 @@
             'pagination.next':   { zh: '下一页 ›',        en: 'Next ›' },
             'pagination.photos': { zh: '张照片',          en: ' photos' },
             'pagination.pages':  { zh: '页',              en: ' pages' },
+            'gallery.originals':     { zh: '原图',        en: 'Originals' },
         };
 
         function t(key) {
@@ -1725,6 +1726,9 @@
         const GALLERY_PAGE_SIZE = 6;
         let galleryCurrentPage = 1;
 
+        // 原图存档链接（百度网盘）
+        const ORIGINAL_ARCHIVE_URL = "https://pan.baidu.com/s/5ZoW1Y9CIVdlBE6AAzT1RXw";
+
         // Render Portfolio Grid
         function renderGallery(filter = 'all', page = 1) {
             const grid = document.getElementById('photoGrid');
@@ -1794,31 +1798,39 @@
             const oldPag = section.querySelector('.gallery-pagination');
             if (oldPag) oldPag.remove();
 
-            if (totalPages <= 1) return;
-
             const pagDiv = document.createElement('div');
-            pagDiv.className = 'gallery-pagination col-span-full flex justify-center items-center gap-2 mt-6 pt-4 border-t border-[#e2dcd0]';
+            pagDiv.className = 'gallery-pagination col-span-full mt-6 pt-4 border-t border-[#e2dcd0]';
 
             let html = '';
-            // Prev
-            html += `<button onclick="goToGalleryPage(${currentPage - 1}, event)" ${currentPage <= 1 ? 'disabled' : ''} class="px-3 py-1 text-xs border rounded ${currentPage <= 1 ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-[#2c2a27] border-[#c5beb4] hover:bg-[#f5f4f0]'}">${t('pagination.prev')}</button>`;
+            html += '<div class="flex justify-center items-center gap-2 flex-wrap">';
 
-            // Page numbers
-            for (let p = 1; p <= totalPages; p++) {
-                if (p === currentPage) {
-                    html += `<span class="px-3 py-1 text-xs bg-[#2c2a27] text-white rounded">${p}</span>`;
-                } else if (Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages) {
-                    html += `<button onclick="goToGalleryPage(${p}, event)" class="px-3 py-1 text-xs border border-[#c5beb4] rounded hover:bg-[#f5f4f0] text-[#2c2a27]">${p}</button>`;
-                } else if (Math.abs(p - currentPage) === 3) {
-                    html += '<span class="text-xs text-gray-400">...</span>';
+            // ===== 翻页控件（只有一页时不显示）=====
+            if (totalPages > 1) {
+                // Prev
+                html += `<button onclick="goToGalleryPage(${currentPage - 1}, event)" ${currentPage <= 1 ? 'disabled' : ''} class="px-3 py-1 text-xs border rounded ${currentPage <= 1 ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-[#2c2a27] border-[#c5beb4] hover:bg-[#f5f4f0]'}">${t('pagination.prev')}</button>`;
+
+                // Page numbers
+                for (let p = 1; p <= totalPages; p++) {
+                    if (p === currentPage) {
+                        html += `<span class="px-3 py-1 text-xs bg-[#2c2a27] text-white rounded">${p}</span>`;
+                    } else if (Math.abs(p - currentPage) <= 2 || p === 1 || p === totalPages) {
+                        html += `<button onclick="goToGalleryPage(${p}, event)" class="px-3 py-1 text-xs border border-[#c5beb4] rounded hover:bg-[#f5f4f0] text-[#2c2a27]">${p}</button>`;
+                    } else if (Math.abs(p - currentPage) === 3) {
+                        html += '<span class="text-xs text-gray-400">...</span>';
+                    }
                 }
+
+                // Next
+                html += `<button onclick="goToGalleryPage(${currentPage + 1}, event)" ${currentPage >= totalPages ? 'disabled' : ''} class="px-3 py-1 text-xs border rounded ${currentPage >= totalPages ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-[#2c2a27] border-[#c5beb4] hover:bg-[#f5f4f0]'}">${t('pagination.next')}</button>`;
+
+                // Stats
+                html += `<span class="text-[10px] text-gray-400 ml-3">${totalPhotos} ${t('pagination.photos')} · ${totalPages} ${t('pagination.pages')}</span>`;
             }
 
-            // Next
-            html += `<button onclick="goToGalleryPage(${currentPage + 1}, event)" ${currentPage >= totalPages ? 'disabled' : ''} class="px-3 py-1 text-xs border rounded ${currentPage >= totalPages ? 'text-gray-300 border-gray-200 cursor-not-allowed' : 'text-[#2c2a27] border-[#c5beb4] hover:bg-[#f5f4f0]'}">${t('pagination.next')}</button>`;
+            // ===== 原图（跳转百度网盘）=====
+            html += `<a href="${ORIGINAL_ARCHIVE_URL}" target="_blank" rel="noopener noreferrer" class="ml-3 px-3 py-1 text-xs border border-[#c5beb4] rounded text-[#2c2a27] hover:bg-[#f5f4f0] transition-colors">${t('gallery.originals')}</a>`;
 
-            // Stats
-            html += `<span class="text-[10px] text-gray-400 ml-3">${totalPhotos} ${t('pagination.photos')} · ${totalPages} ${t('pagination.pages')}</span>`;
+            html += '</div>';
 
             pagDiv.innerHTML = html;
             section.appendChild(pagDiv);
